@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +21,6 @@
 </header>
 
 <section class="hero">
-
     <p class="tagline">YOUR CAMPUS. YOUR RESOURCES.</p>
 
     <h1>
@@ -39,10 +39,8 @@
             id="searchInput"
             placeholder="Search calculators, laptops, textbooks..."
         >
-
-        <button onclick="searchItems()">Search</button>
+        <button type="button" onclick="searchItems()">Search</button>
     </div>
-
 </section>
 
 <section class="categories">
@@ -78,7 +76,29 @@
 <section class="items-section" id="items">
     <h2>Available Campus Resources</h2>
 
-    <div class="items-grid" id="itemsGrid"></div>
+    <div class="items-toolbar">
+        <input
+            type="search"
+            id="itemSearch"
+            placeholder="Search items..."
+            aria-label="Search campus items"
+        >
+
+        <select id="categoryFilter" aria-label="Filter by category">
+            <option value="">All Categories</option>
+            <option value="Textbooks">Textbooks</option>
+            <option value="Calculators">Calculators</option>
+            <option value="Laptops">Laptops</option>
+            <option value="Cameras">Cameras</option>
+            <option value="Sports Equipment">Sports Equipment</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+
+    <div class="items-grid" id="itemsGrid">
+        <p>Loading items...</p>
+    </div>
 
     <p id="emptyMessage" hidden>No matching items found.</p>
 </section>
