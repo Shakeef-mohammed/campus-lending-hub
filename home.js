@@ -1,4 +1,5 @@
 
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -7,8 +8,13 @@ import {
 
 import {
   collection,
-  getDocs
+  getDocs,
+  addDoc,
+  query,
+  where,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
 
 const itemsGrid = document.getElementById("itemsGrid");
 const emptyMessage = document.getElementById("emptyMessage");
@@ -72,9 +78,53 @@ function displayItems(list) {
           return;
         }
 
-        alert(
-          "Borrow request feature is coming next. This request has not been saved."
-        );
+       
+const confirmRequest = confirm(
+  `Do you want to request "${item.name}"?`
+);
+
+if (!confirmRequest) return;
+
+button.disabled = true;
+button.textContent = "Sending...";
+
+try {
+  const existingRequests = await getDocs(
+    query(
+      collection(db, "borrowRequests"),
+      where("itemId", "==", item.id),
+      where("borrowerId", "==", currentUser.uid),
+      where("status", "==", "pending")
+    )
+  );
+
+  if (!existingRequests.empty) {
+    alert("You already have a pending request for this item.");
+    return;
+  }
+
+  await addDoc(collection(db, "borrowRequests"), {
+    itemId: item.id,
+    itemName: item.name,
+    ownerId: item.ownerId,
+    borrowerId: currentUser.uid,
+    borrowerName:
+      currentUser.displayName ||
+      currentUser.email?.split("@")[0] ||
+      "Student",
+    status: "pending",
+    createdAt: serverTimestamp()
+  });
+
+  button.textContent = "Request Sent";
+  alert("Your borrowing request has been sent!");
+} catch (error) {
+  console.error("Borrow request error:", error);
+  alert("Could not send request. Please try again.");
+  button.disabled = false;
+  button.textContent = "Request to Borrow";
+}
+
       });
     }
 
