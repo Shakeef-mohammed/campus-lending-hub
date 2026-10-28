@@ -6,6 +6,7 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
+
 import {
   collection,
   addDoc,
@@ -13,8 +14,12 @@ import {
   doc,
   getDoc,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  query,
+  where,
+  updateDoc
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
 
 const welcomeName = document.getElementById("welcomeName");
 const userName = document.getElementById("userName");
