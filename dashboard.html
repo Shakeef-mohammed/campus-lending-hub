@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusShare | Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>Campus<span>Share</span></h2>
+
+        <p class="menu-label">WORKSPACE</p>
+
+        <a class="active" href="dashboard.html">Dashboard</a>
+        <a href="index.html#items">Browse Items</a>
+        <a href="#requests">My Requests</a>
+        <a href="#borrowings">My Borrowings</a>
+        <a href="#history">History</a>
+
+        <a href="index.html" class="back-home">Back to Home</a>
+    </aside>
+
+    <main class="dashboard-main">
+        <header class="topbar">
+            <div>
+                <h2>Student Dashboard</h2>
+                <p>Manage your campus borrowing activity.</p>
+            </div>
+
+            <div>
+                <span id="userName">Student</span>
+                <button id="logoutButton">Logout</button>
+            </div>
+        </header>
+
+        <section class="welcome">
+            <h1>Welcome back, <span id="welcomeName">Student</span>!</h1>
+            <p>Here is an overview of your campus resources.</p>
+        </section>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <p>Total Listed Items</p>
+                <h2>8</h2>
+            </article>
+
+            <article class="stat-card">
+                <p>Pending Requests</p>
+                <h2>2</h2>
+            </article>
+
+            <article class="stat-card">
+                <p>Currently Borrowed</p>
+                <h2>1</h2>
+            </article>
+
+            <article class="stat-card">
+                <p>Items Returned</p>
+                <h2>4</h2>
+            </article>
+        </section>
+
+        <section class="dashboard-panel" id="requests">
+            <h2>Recent Borrowing Requests</h2>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Owner</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>Scientific Calculator</td>
+                            <td>Student A</td>
+                            <td>October 25, 2026</td>
+                            <td><span class="pending">Pending</span></td>
+                        </tr>
+
+                        <tr>
+                            <td>Programming Textbook</td>
+                            <td>Student D</td>
+                            <td>October 27, 2026</td>
+                            <td><span class="approved">Approved</span></td>
+                        </tr>
+
+                        <tr>
+                            <td>Laptop</td>
+                            <td>Student B</td>
+                            <td>October 24, 2026</td>
+                            <td><span class="returned">Returned</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="dashboard-panel" id="history">
+            <h2>Quick Actions</h2>
+
+            <div class="quick-actions">
+                <a href="index.html#items">Browse Campus Resources</a>
+                <a href="index.html">Return to Home Page</a>
+            </div>
+        </section>
+
+        <p class="demo-note">
+            This dashboard uses sample data. A backend and database are
+            required for real borrowing records and account information.
+        </p>
+    </main>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

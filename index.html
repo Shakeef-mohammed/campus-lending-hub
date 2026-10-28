@@ -1,1 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CampusShare | Home</title>
+    <link rel="stylesheet" href="home.css">
+</head>
+<body>
 
+<header class="navbar">
+    <h2>Campus<span>Share</span></h2>
+
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="#items">Browse Items</a>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="login.html">Sign In</a>
+    </nav>
+</header>
+
+<section class="hero">
+
+    <p class="tagline">YOUR CAMPUS. YOUR RESOURCES.</p>
+
+    <h1>
+        Borrow. Share. Make<br>
+        <span>Campus Life Easier.</span>
+    </h1>
+
+    <p>
+        Find the items you need, borrow from fellow students
+        or the university, and help others by sharing what you have.
+    </p>
+
+    <div class="search-box">
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search calculators, laptops, textbooks..."
+        >
+
+        <button onclick="searchItems()">Search</button>
+    </div>
+
+</section>
+
+<section class="categories">
+    <h2>Browse by Category</h2>
+
+    <div class="category-grid">
+        <div class="category-card" onclick="filterCategory('Textbooks')">
+            📚 <h3>Textbooks</h3>
+        </div>
+
+        <div class="category-card" onclick="filterCategory('Calculators')">
+            🧮 <h3>Calculators</h3>
+        </div>
+
+        <div class="category-card" onclick="filterCategory('Laptops')">
+            💻 <h3>Laptops</h3>
+        </div>
+
+        <div class="category-card" onclick="filterCategory('Cameras')">
+            📷 <h3>Cameras</h3>
+        </div>
+
+        <div class="category-card" onclick="filterCategory('Sports Equipment')">
+            🏸 <h3>Sports Equipment</h3>
+        </div>
+
+        <div class="category-card" onclick="filterCategory('Accessories')">
+            🔌 <h3>Accessories</h3>
+        </div>
+    </div>
+</section>
+
+<section class="items-section" id="items">
+    <h2>Available Campus Resources</h2>
+
+    <div class="items-grid" id="itemsGrid"></div>
+
+    <p id="emptyMessage" hidden>No matching items found.</p>
+</section>
+
+<footer>
+    <h3>CampusShare</h3>
+    <p>Smart sharing. Smarter campus.</p>
+    <p>© 2026 CampusShare</p>
+</footer>
+
+<script src="home.js"></script>
+</body>
+</html>
