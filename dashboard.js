@@ -34,3 +34,4 @@ logoutButton.addEventListener("click", async () => {
     alert("Could not log out. Please check your connection and try again.");
   }
 });
+
