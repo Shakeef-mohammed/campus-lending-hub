@@ -1,116 +1,186 @@
-const items = [
-    {
-        name: "Scientific Calculator",
-        category: "Calculators",
-        location: "Faculty of Computing",
-        owner: "Student A",
-        available: true
-    },
-    {
-        name: "Dell Laptop",
-        category: "Laptops",
-        location: "Library",
-        owner: "Student B",
-        available: true
-    },
-    {
-        name: "Programming Textbook",
-        category: "Textbooks",
-        location: "Library",
-        owner: "Student C",
-        available: true
-    },
-    {
-        name: "Canon Camera",
-        category: "Cameras",
-        location: "Faculty of Applied Sciences",
-        owner: "Student D",
-        available: false
-    },
-    {
-        name: "Badminton Racket Set",
-        category: "Sports Equipment",
-        location: "Student Center",
-        owner: "Student E",
-        available: true
-    },
-    {
-        name: "Extension Cable",
-        category: "Accessories",
-        location: "Faculty of Computing",
-        owner: "Student F",
-        available: true
-    }
-];
+
+import { auth, db } from "./firebase-config.js";
+
+import {
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
+
+import {
+  collection,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const itemsGrid = document.getElementById("itemsGrid");
 const emptyMessage = document.getElementById("emptyMessage");
 
+const heroSearch = document.getElementById("searchInput");
+const itemSearch = document.getElementById("itemSearch");
+const categoryFilter = document.getElementById("categoryFilter");
+
+let items = [];
+let currentUser = null;
+
+onAuthStateChanged(auth, (user) => {
+  currentUser = user;
+});
+
 function displayItems(list) {
-    itemsGrid.innerHTML = "";
+  itemsGrid.replaceChildren();
 
+  if (emptyMessage) {
     emptyMessage.hidden = list.length !== 0;
+  }
 
-    list.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "item-card";
+  list.forEach((item) => {
+    const card = document.createElement("div");
+    card.className = "item-card";
 
-        const title = document.createElement("h3");
-        title.textContent = item.name;
+    const title = document.createElement("h3");
+    title.textContent = item.name || "Unnamed item";
 
-        const category = document.createElement("p");
-        category.textContent = "Category: " + item.category;
+    const category = document.createElement("p");
+    category.textContent = "Category: " + (item.category || "Other");
 
-        const location = document.createElement("p");
-        location.textContent = "Location: " + item.location;
+    const description = document.createElement("p");
+    description.textContent = "Description: " + (item.description || "No description");
 
-        const owner = document.createElement("p");
-        owner.textContent = "Owner: " + item.owner;
+    const location = document.createElement("p");
+    location.textContent = "Pickup: " + (item.location || "Not specified");
 
-        const status = document.createElement("p");
-        status.textContent = item.available ? "Available" : "Currently Borrowed";
+    const owner = document.createElement("p");
+    owner.textContent = "Listed by: " + (item.ownerName || "Student");
 
-        const button = document.createElement("button");
-        button.textContent = item.available ? "Request to Borrow" : "Currently Borrowed";
-        button.disabled = !item.available;
+    const status = document.createElement("p");
+    status.textContent = item.available
+      ? "Available"
+      : "Currently Borrowed";
 
-        button.addEventListener("click", () => {
-            const user = localStorage.getItem("campusShareUser");
+    const button = document.createElement("button");
 
-            if (!user) {
-                window.location.href = "login.html";
-            } else {
-                alert("Borrowing request demo. A backend is needed to save real requests.");
-            }
-        });
+    if (!item.available) {
+      button.textContent = "Currently Borrowed";
+      button.disabled = true;
+    } else if (currentUser && currentUser.uid === item.ownerId) {
+      button.textContent = "Your Item";
+      button.disabled = true;
+    } else {
+      button.textContent = "Request to Borrow";
 
-        card.append(title, category, location, owner, status, button);
-        itemsGrid.appendChild(card);
-    });
+      button.addEventListener("click", () => {
+        if (!currentUser) {
+          window.location.href = "login.html";
+          return;
+        }
+
+        alert(
+          "Borrow request feature is coming next. This request has not been saved."
+        );
+      });
+    }
+
+    card.append(
+      title,
+      category,
+      description,
+      location,
+      owner,
+      status,
+      button
+    );
+
+    itemsGrid.appendChild(card);
+  });
+}
+
+function applyFilters() {
+  const query = (
+    (heroSearch?.value || "") + " " +
+    (itemSearch?.value || "")
+  ).trim().toLowerCase();
+
+  const selectedCategory = categoryFilter?.value || "";
+
+  const filteredItems = items.filter((item) => {
+    const searchableText = [
+      item.name,
+      item.category,
+      item.description,
+      item.location,
+      item.ownerName
+    ].join(" ").toLowerCase();
+
+    const matchesSearch = searchableText.includes(query);
+    const matchesCategory =
+      !selectedCategory || item.category === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  displayItems(filteredItems);
 }
 
 function searchItems() {
-    const query = document.getElementById("searchInput")
-        .value.trim().toLowerCase();
+  if (itemSearch && heroSearch) {
+    itemSearch.value = heroSearch.value;
+  }
 
-    const results = items.filter(item =>
-        (item.name + " " + item.category + " " + item.location)
-            .toLowerCase().includes(query)
-    );
+  applyFilters();
 
-    displayItems(results);
+  document.getElementById("items")?.scrollIntoView({
+    behavior: "smooth"
+  });
 }
 
 function filterCategory(selectedCategory) {
-    document.getElementById("searchInput").value = "";
+  if (categoryFilter) {
+    categoryFilter.value = selectedCategory;
+  }
 
-    displayItems(
-        items.filter(item => item.category === selectedCategory)
-    );
+  if (heroSearch) heroSearch.value = "";
+  if (itemSearch) itemSearch.value = "";
 
-    document.getElementById("items").scrollIntoView({
-        behavior: "smooth"
-    });
+  applyFilters();
+
+  document.getElementById("items")?.scrollIntoView({
+    behavior: "smooth"
+  });
 }
 
-displayItems(items);
+window.searchItems = searchItems;
+window.filterCategory = filterCategory;
+
+heroSearch?.addEventListener("input", () => {
+  if (itemSearch) itemSearch.value = heroSearch.value;
+  applyFilters();
+});
+
+itemSearch?.addEventListener("input", () => {
+  if (heroSearch) heroSearch.value = itemSearch.value;
+  applyFilters();
+});
+
+categoryFilter?.addEventListener("change", applyFilters);
+
+async function loadItems() {
+  itemsGrid.textContent = "Loading campus items...";
+
+  try {
+    const snapshot = await getDocs(collection(db, "items"));
+
+    items = snapshot.docs.map((document) => ({
+      id: document.id,
+      ...document.data()
+    }));
+
+    applyFilters();
+  } catch (error) {
+    console.error("Error loading campus items:", error);
+
+    itemsGrid.textContent =
+      "Could not load items. Please refresh and check your connection.";
+
+    if (emptyMessage) emptyMessage.hidden = true;
+  }
+}
+
+loadItems();
