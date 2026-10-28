@@ -6,7 +6,6 @@ import {
   signOut
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
-
 import {
   collection,
   addDoc,
@@ -20,7 +19,6 @@ import {
   updateDoc
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-
 const welcomeName = document.getElementById("welcomeName");
 const userName = document.getElementById("userName");
 const logoutButton = document.getElementById("logoutButton");
@@ -29,19 +27,19 @@ const addItemForm = document.getElementById("addItemForm");
 const addItemButton = document.getElementById("addItemButton");
 const itemFormMessage = document.getElementById("itemFormMessage");
 const itemsList = document.getElementById("itemsList");
+const requestsList = document.getElementById("requestsList");
 
 let currentUser = null;
 
-if (logoutButton) {
-  logoutButton.disabled = true;
-}
+if (logoutButton) logoutButton.disabled = true;
 
 function showMessage(message, isError = false) {
   if (!itemFormMessage) return;
-
   itemFormMessage.textContent = message;
   itemFormMessage.style.color = isError ? "#b91c1c" : "#087f64";
 }
+
+// -------------------- ITEMS --------------------
 
 function renderItems(items) {
   if (!itemsList) return;
@@ -82,88 +80,6 @@ function renderItems(items) {
   });
 }
 
-async function loadRequests() {
-  const requestsList = document.getElementById("requestsList");
-
-  if (!requestsList || !currentUser) return;
-
-  requestsList.textContent = "Loading requests...";
-
-  try {
-    const requestsQuery = query(
-      collection(db, "borrowRequests"),
-      where("ownerId", "==", currentUser.uid)
-    );
-
-    const snapshot = await getDocs(requestsQuery);
-
-    requestsList.replaceChildren();
-
-    if (snapshot.empty) {
-      requestsList.textContent = "No borrow requests received yet.";
-      return;
-    }
-
-    snapshot.forEach((requestDoc) => {
-      const request = requestDoc.data();
-
-      const card = document.createElement("article");
-      card.className = "item-card";
-
-      const title = document.createElement("h3");
-      title.textContent = request.itemName || "Item";
-
-      const borrower = document.createElement("p");
-      borrower.textContent =
-        "Requested by: " + (request.borrowerName || "Student");
-
-      const status = document.createElement("p");
-      status.textContent = "Status: " + request.status;
-
-      card.append(title, borrower, status);
-
-      if (request.status === "pending") {
-        const approveButton = document.createElement("button");
-        approveButton.textContent = "Approve";
-
-        const rejectButton = document.createElement("button");
-        rejectButton.textContent = "Reject";
-
-        approveButton.addEventListener("click", () =>
-          updateRequestStatus(requestDoc.id, "approved")
-        );
-
-        rejectButton.addEventListener("click", () =>
-          updateRequestStatus(requestDoc.id, "rejected")
-        );
-
-        card.append(approveButton, rejectButton);
-      }
-
-      requestsList.appendChild(card);
-    });
-  } catch (error) {
-    console.error("Error loading requests:", error);
-    requestsList.textContent =
-      "Could not load requests. Please check Firestore Rules.";
-  }
-}
-
-async function updateRequestStatus(requestId, newStatus) {
-  try {
-    await updateDoc(doc(db, "borrowRequests", requestId), {
-      status: newStatus
-    });
-
-    alert("Request " + newStatus + " successfully!");
-    await loadRequests();
-  } catch (error) {
-    console.error("Error updating request:", error);
-    alert("Could not update request. Please check Firestore Rules.");
-  }
-}
-
-
 async function loadItems() {
   if (!itemsList) return;
 
@@ -183,6 +99,141 @@ async function loadItems() {
     itemsList.textContent = "Could not load items. Please refresh and try again.";
   }
 }
+
+// -------------------- BORROW REQUESTS --------------------
+
+async function loadRequests() {
+  if (!requestsList || !currentUser) return;
+
+  requestsList.textContent = "Loading requests...";
+
+  try {
+    const requestsQuery = query(
+      collection(db, "borrowRequests"),
+      where("ownerId", "==", currentUser.uid)
+    );
+
+    const snapshot = await getDocs(requestsQuery);
+    requestsList.replaceChildren();
+
+    if (snapshot.empty) {
+      requestsList.textContent = "No borrow requests received yet.";
+      return;
+    }
+
+    for (const requestDoc of snapshot.docs) {
+      const request = requestDoc.data();
+
+      // Get item details from the original item document when possible.
+      let itemName = request.itemName || "";
+      let itemCategory = request.category || "";
+
+      if (request.itemId && (!itemName || !itemCategory)) {
+        try {
+          const itemSnapshot = await getDoc(
+            doc(db, "items", request.itemId)
+          );
+
+          if (itemSnapshot.exists()) {
+            const itemData = itemSnapshot.data();
+            itemName = itemName || itemData.name || "";
+            itemCategory = itemCategory || itemData.category || "";
+          }
+        } catch (error) {
+          console.error("Could not load item details:", error);
+        }
+      }
+
+      const statusValue = String(request.status || "unknown").toLowerCase();
+
+      const card = document.createElement("article");
+      card.className = "request-card";
+
+      const title = document.createElement("h3");
+      title.className = "request-title";
+      title.textContent = itemName || "Item name unavailable";
+
+      const category = document.createElement("p");
+      category.textContent = `Category: ${itemCategory || "Not recorded"}`;
+
+      const borrower = document.createElement("p");
+      borrower.textContent =
+        `Requested by: ${request.borrowerName || "Student"}`;
+
+      const status = document.createElement("span");
+      status.className = `request-status status-${statusValue}`;
+      status.textContent =
+        `Status: ${statusValue.charAt(0).toUpperCase()}${statusValue.slice(1)}`;
+
+      card.append(title, category, borrower, status);
+
+      if (statusValue === "pending") {
+        const actions = document.createElement("div");
+        actions.className = "request-actions";
+
+        const approveButton = document.createElement("button");
+        approveButton.type = "button";
+        approveButton.className = "request-btn approve-btn";
+        approveButton.textContent = "Accept";
+
+        const rejectButton = document.createElement("button");
+        rejectButton.type = "button";
+        rejectButton.className = "request-btn reject-btn";
+        rejectButton.textContent = "Reject";
+
+        approveButton.addEventListener("click", async () => {
+          const confirmed = window.confirm(
+            "Accept this borrow request?"
+          );
+          if (!confirmed) return;
+
+          approveButton.disabled = true;
+          rejectButton.disabled = true;
+          await updateRequestStatus(requestDoc.id, "approved");
+        });
+
+        rejectButton.addEventListener("click", async () => {
+          const confirmed = window.confirm(
+            "Reject this borrow request?"
+          );
+          if (!confirmed) return;
+
+          approveButton.disabled = true;
+          rejectButton.disabled = true;
+          await updateRequestStatus(requestDoc.id, "rejected");
+        });
+
+        card.appendChild(actions);
+        actions.append(approveButton, rejectButton);
+      }
+
+      requestsList.appendChild(card);
+    }
+  } catch (error) {
+    console.error("Error loading requests:", error);
+    requestsList.textContent =
+      `Could not load requests: ${error.message}`;
+  }
+}
+
+async function updateRequestStatus(requestId, newStatus) {
+  try {
+    await updateDoc(doc(db, "borrowRequests", requestId), {
+      status: newStatus
+    });
+
+    alert(`Request ${newStatus} successfully!`);
+    await loadRequests();
+  } catch (error) {
+    console.error("Error updating request:", error);
+    alert(
+      `Could not update request: ${error.message}. Check Firestore Rules.`
+    );
+    await loadRequests();
+  }
+}
+
+// -------------------- LOGIN AND PROFILE --------------------
 
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
@@ -228,6 +279,8 @@ onAuthStateChanged(auth, async (user) => {
   await loadRequests();
 });
 
+// -------------------- ADD ITEM --------------------
+
 if (addItemForm) {
   addItemForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -237,10 +290,11 @@ if (addItemForm) {
       return;
     }
 
-    const name = document.getElementById("itemName").value.trim();
-    const category = document.getElementById("itemCategory").value;
-    const description = document.getElementById("itemDescription").value.trim();
-    const location = document.getElementById("itemLocation").value.trim();
+    const name = document.getElementById("itemName")?.value.trim();
+    const category = document.getElementById("itemCategory")?.value;
+    const description =
+      document.getElementById("itemDescription")?.value.trim();
+    const location = document.getElementById("itemLocation")?.value.trim();
 
     if (!name || !category || !description || !location) {
       showMessage("Please complete all fields.", true);
@@ -257,8 +311,10 @@ if (addItemForm) {
         description,
         location,
         ownerId: currentUser.uid,
-        ownerName: currentUser.displayName ||
-          currentUser.email?.split("@")[0] || "Student",
+        ownerName:
+          currentUser.displayName ||
+          currentUser.email?.split("@")[0] ||
+          "Student",
         available: true,
         createdAt: serverTimestamp()
       });
@@ -268,12 +324,17 @@ if (addItemForm) {
       await loadItems();
     } catch (error) {
       console.error("Error adding item:", error);
-      showMessage("Could not add item. Check the Firestore Rules and internet connection.", true);
+      showMessage(
+        `Could not add item: ${error.message}`,
+        true
+      );
     } finally {
       if (addItemButton) addItemButton.disabled = false;
     }
   });
 }
+
+// -------------------- LOGOUT --------------------
 
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
@@ -283,6 +344,7 @@ if (logoutButton) {
       await signOut(auth);
       window.location.replace("login.html");
     } catch (error) {
+      console.error("Logout failed:", error);
       logoutButton.disabled = false;
       alert("Could not log out. Please try again.");
     }
