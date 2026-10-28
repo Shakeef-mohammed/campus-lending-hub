@@ -27,20 +27,26 @@ const itemsList = document.getElementById("itemsList");
 
 let currentUser = null;
 
-logoutButton.disabled = true;
+if (logoutButton) {
+  logoutButton.disabled = true;
+}
 
 function showMessage(message, isError = false) {
+  if (!itemFormMessage) return;
+
   itemFormMessage.textContent = message;
   itemFormMessage.style.color = isError ? "#b91c1c" : "#087f64";
 }
 
 function renderItems(items) {
+  if (!itemsList) return;
+
   itemsList.replaceChildren();
 
   if (items.length === 0) {
-    const emptyMessage = document.createElement("p");
-    emptyMessage.textContent = "No items listed yet. Be the first to add one!";
-    itemsList.appendChild(emptyMessage);
+    const message = document.createElement("p");
+    message.textContent = "No items listed yet. Be the first to add one!";
+    itemsList.appendChild(message);
     return;
   }
 
@@ -72,6 +78,8 @@ function renderItems(items) {
 }
 
 async function loadItems() {
+  if (!itemsList) return;
+
   itemsList.textContent = "Loading items...";
 
   try {
@@ -85,8 +93,7 @@ async function loadItems() {
     renderItems(items);
   } catch (error) {
     console.error("Could not load items:", error);
-    itemsList.textContent =
-      "Could not load items. Please refresh and try again.";
+    itemsList.textContent = "Could not load items. Please refresh and try again.";
   }
 }
 
@@ -99,14 +106,10 @@ onAuthStateChanged(auth, async (user) => {
   currentUser = user;
 
   const displayName =
-    (user.displayName || user.email?.split("@")[0] || "Student")
-      .split(" ")
-      .filter(Boolean)
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    user.displayName || user.email?.split("@")[0] || "Student";
 
-  welcomeName.textContent = displayName;
-  userName.textContent = displayName;
+  if (welcomeName) welcomeName.textContent = displayName;
+  if (userName) userName.textContent = displayName;
 
   try {
     const profileRef = doc(db, "users", user.uid);
@@ -132,70 +135,68 @@ onAuthStateChanged(auth, async (user) => {
     console.error("Profile save failed:", error);
   }
 
-  logoutButton.disabled = false;
+  if (logoutButton) logoutButton.disabled = false;
+
   await loadItems();
 });
 
-addItemForm.addEventListener("submit", async (event) => {
-  event.preventDefault();
+if (addItemForm) {
+  addItemForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
 
-  if (!currentUser) {
-    showMessage("Please log in before adding an item.", true);
-    return;
-  }
+    if (!currentUser) {
+      showMessage("Please log in before adding an item.", true);
+      return;
+    }
 
-  const name = document.getElementById("itemName").value.trim();
-  const category = document.getElementById("itemCategory").value;
-  const description = document.getElementById("itemDescription").value.trim();
-  const location = document.getElementById("itemLocation").value.trim();
+    const name = document.getElementById("itemName").value.trim();
+    const category = document.getElementById("itemCategory").value;
+    const description = document.getElementById("itemDescription").value.trim();
+    const location = document.getElementById("itemLocation").value.trim();
 
-  if (!name || !category || !description || !location) {
-    showMessage("Please complete all fields.", true);
-    return;
-  }
+    if (!name || !category || !description || !location) {
+      showMessage("Please complete all fields.", true);
+      return;
+    }
 
-  addItemButton.disabled = true;
-  showMessage("Saving your item...");
+    if (addItemButton) addItemButton.disabled = true;
+    showMessage("Saving your item...");
 
-  try {
-    await addDoc(collection(db, "items"), {
-      name,
-      category,
-      description,
-      location,
-      ownerId: currentUser.uid,
-      ownerName:
-        currentUser.displayName ||
-        currentUser.email?.split("@")[0] ||
-        "Student",
-      available: true,
-      createdAt: serverTimestamp()
-    });
+    try {
+      await addDoc(collection(db, "items"), {
+        name,
+        category,
+        description,
+        location,
+        ownerId: currentUser.uid,
+        ownerName: currentUser.displayName ||
+          currentUser.email?.split("@")[0] || "Student",
+        available: true,
+        createdAt: serverTimestamp()
+      });
 
-    addItemForm.reset();
-    showMessage("Item added successfully!");
-    await loadItems();
-  } catch (error) {
-    console.error("Error adding item:", error);
-    showMessage(
-      "Could not add item. Check your internet and Firestore Rules.",
-      true
-    );
-  } finally {
-    addItemButton.disabled = false;
-  }
-});
+      addItemForm.reset();
+      showMessage("Item added successfully!");
+      await loadItems();
+    } catch (error) {
+      console.error("Error adding item:", error);
+      showMessage("Could not add item. Check the Firestore Rules and internet connection.", true);
+    } finally {
+      if (addItemButton) addItemButton.disabled = false;
+    }
+  });
+}
 
-logoutButton.addEventListener("click", async () => {
-  logoutButton.disabled = true;
-  logoutButton.textContent = "Logging out...";
+if (logoutButton) {
+  logoutButton.addEventListener("click", async () => {
+    logoutButton.disabled = true;
 
-  try {
-    await signOut(auth);
-    window.location.replace("login.html");
-  } catch (error) {
-    logoutButton.disabled = false;
-    logoutButton.textContent = "Logout";
-    alert("Could not log out. Please check your connection and try again.");
-  }
-});
+    try {
+      await signOut(auth);
+      window.location.replace("login.html");
+    } catch (error) {
+      logoutButton.disabled = false;
+      alert("Could not log out. Please try again.");
+    }
+  });
+}
