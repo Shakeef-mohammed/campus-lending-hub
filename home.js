@@ -72,7 +72,7 @@ function displayItems(list) {
     } else {
       button.textContent = "Request to Borrow";
 
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async () => {
         if (!currentUser) {
           window.location.href = "login.html";
           return;
