@@ -40,6 +40,57 @@
             <p>Here is an overview of your campus resources.</p>
         </section>
 
+        
+<section class="dashboard-panel" id="addItemPanel">
+    <h2>List an Item</h2>
+    <p style="margin-bottom: 18px; color: #64748b;">
+        Share an item with other campus students.
+    </p>
+
+    <form id="addItemForm">
+        <label for="itemName">Item Name</label>
+        <input id="itemName" type="text"
+               maxlength="80" required
+               placeholder="e.g. Scientific Calculator">
+
+        <label for="itemCategory">Category</label>
+        <select id="itemCategory" required>
+            <option value="">Choose a category</option>
+            <option value="Textbooks">Textbooks</option>
+            <option value="Calculators">Calculators</option>
+            <option value="Laptops">Laptops</option>
+            <option value="Cameras">Cameras</option>
+            <option value="Sports Equipment">Sports Equipment</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="itemDescription">Description</label>
+        <textarea id="itemDescription" maxlength="500"
+                  rows="3" required
+                  placeholder="Describe the item and its condition"></textarea>
+
+        <label for="itemLocation">Pickup Location</label>
+        <input id="itemLocation" type="text"
+               maxlength="120" required
+               placeholder="e.g. University library">
+
+        <button id="addItemButton" type="submit">
+            Add Item
+        </button>
+
+        <p id="itemFormMessage" role="status"
+           style="margin-top: 12px;"></p>
+    </form>
+</section>
+
+<section class="dashboard-panel">
+    <h2>Campus Items</h2>
+    <div id="itemsList">
+        <p>Loading items...</p>
+    </div>
+</section>
+
         <section class="stats-grid">
             <article class="stat-card">
                 <p>Total Listed Items</p>
