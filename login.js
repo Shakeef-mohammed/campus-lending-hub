@@ -86,3 +86,4 @@ document.getElementById("forgotLink").addEventListener("click", async (event) =>
     showMessage(friendlyError(error));
   }
 });
+
