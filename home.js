@@ -45,11 +45,11 @@ const items = [
 
 const itemsGrid = document.getElementById("itemsGrid");
 const emptyMessage = document.getElementById("emptyMessage");
+const searchInput = document.getElementById("searchInput");
 
 function displayItems(list) {
     itemsGrid.innerHTML = "";
-
-    emptyMessage.hidden = list.length !== 0;
+    emptyMessage.hidden = list.length > 0;
 
     list.forEach(item => {
         const card = document.createElement("div");
@@ -90,27 +90,51 @@ function displayItems(list) {
 }
 
 function searchItems() {
-    const query = document.getElementById("searchInput")
-        .value.trim().toLowerCase();
+    const query = searchInput.value.trim().toLowerCase();
 
-    const results = items.filter(item =>
-        (item.name + " " + item.category + " " + item.location)
-            .toLowerCase().includes(query)
-    );
+    // An empty search shows all items again.
+    if (query === "") {
+        displayItems(items);
+        document.getElementById("items").scrollIntoView({ behavior: "smooth" });
+        return;
+    }
+
+    // Search across item name, category, location, owner and availability.
+    const results = items.filter(item => {
+        const searchableText = [
+            item.name,
+            item.category,
+            item.location,
+            item.owner,
+            item.available ? "available" : "currently borrowed borrowed unavailable"
+        ].join(" ").toLowerCase();
+
+        return searchableText.includes(query);
+    });
 
     displayItems(results);
+    document.getElementById("items").scrollIntoView({ behavior: "smooth" });
 }
 
 function filterCategory(selectedCategory) {
-    document.getElementById("searchInput").value = "";
-
-    displayItems(
-        items.filter(item => item.category === selectedCategory)
-    );
-
-    document.getElementById("items").scrollIntoView({
-        behavior: "smooth"
-    });
+    searchInput.value = "";
+    displayItems(items.filter(item => item.category === selectedCategory));
+    document.getElementById("items").scrollIntoView({ behavior: "smooth" });
 }
+
+// Search immediately as the user types.
+searchInput.addEventListener("input", searchItems);
+
+// Also allow Enter to run the search.
+searchInput.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        searchItems();
+    }
+});
+
+// Make the functions available to the existing HTML onclick attributes.
+window.searchItems = searchItems;
+window.filterCategory = filterCategory;
 
 displayItems(items);
