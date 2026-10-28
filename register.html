@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusShare | Create Account</title>
+  <link rel="stylesheet" href="login.css">
+  <style>
+    .form-panel { padding-top: 35px; padding-bottom: 35px; }
+    .form-panel h1 { margin-bottom: 8px; }
+    .subtitle { margin-bottom: 20px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group input { width: 100%; }
+    .login-btn:disabled { opacity: .65; cursor: wait; }
+    #message { line-height: 1.5; }
+    @media (max-width: 650px) { .welcome-panel { display: none; } .form-panel { width: 100%; padding: 30px 22px; } }
+  </style>
+</head>
+<body>
+  <main class="login-container">
+    <section class="welcome-panel">
+      <div class="brand">
+        <div class="logo">🎓</div>
+        <div><h2>CampusShare</h2><p>SMART CAMPUS LENDING HUB</p></div>
+      </div>
+      <div class="welcome-content">
+        <h1>Join your campus.<br>Share more.</h1>
+        <p>Create your account to connect with your campus community and share useful resources.</p>
+        <div class="resource-icons"><span>📚</span><span>🧮</span><span>💻</span><span>📷</span></div>
+      </div>
+      <p class="footer-text">A smarter way to share on campus.</p>
+    </section>
+
+    <section class="form-panel">
+      <form id="registerForm">
+        <h1>Create account</h1>
+        <p class="subtitle">Register to get started with CampusShare.</p>
+
+        <div class="form-group">
+          <label for="fullName">Full name</label>
+          <input type="text" id="fullName" autocomplete="name" placeholder="Enter your full name" required maxlength="80">
+        </div>
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" autocomplete="email" placeholder="Enter your email address" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" autocomplete="new-password" placeholder="At least 6 characters" minlength="6" required>
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">Confirm password</label>
+          <input type="password" id="confirmPassword" autocomplete="new-password" placeholder="Enter your password again" minlength="6" required>
+        </div>
+
+        <button type="submit" class="login-btn">Create Account →</button>
+        <p id="message" role="status" aria-live="polite"></p>
+        <p class="signup-text">Already have an account? <a href="login.html">Sign in</a></p>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="register.js"></script>
+</body>
+</html>
