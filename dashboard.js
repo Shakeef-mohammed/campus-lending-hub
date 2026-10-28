@@ -82,6 +82,88 @@ function renderItems(items) {
   });
 }
 
+async function loadRequests() {
+  const requestsList = document.getElementById("requestsList");
+
+  if (!requestsList || !currentUser) return;
+
+  requestsList.textContent = "Loading requests...";
+
+  try {
+    const requestsQuery = query(
+      collection(db, "borrowRequests"),
+      where("ownerId", "==", currentUser.uid)
+    );
+
+    const snapshot = await getDocs(requestsQuery);
+
+    requestsList.replaceChildren();
+
+    if (snapshot.empty) {
+      requestsList.textContent = "No borrow requests received yet.";
+      return;
+    }
+
+    snapshot.forEach((requestDoc) => {
+      const request = requestDoc.data();
+
+      const card = document.createElement("article");
+      card.className = "item-card";
+
+      const title = document.createElement("h3");
+      title.textContent = request.itemName || "Item";
+
+      const borrower = document.createElement("p");
+      borrower.textContent =
+        "Requested by: " + (request.borrowerName || "Student");
+
+      const status = document.createElement("p");
+      status.textContent = "Status: " + request.status;
+
+      card.append(title, borrower, status);
+
+      if (request.status === "pending") {
+        const approveButton = document.createElement("button");
+        approveButton.textContent = "Approve";
+
+        const rejectButton = document.createElement("button");
+        rejectButton.textContent = "Reject";
+
+        approveButton.addEventListener("click", () =>
+          updateRequestStatus(requestDoc.id, "approved")
+        );
+
+        rejectButton.addEventListener("click", () =>
+          updateRequestStatus(requestDoc.id, "rejected")
+        );
+
+        card.append(approveButton, rejectButton);
+      }
+
+      requestsList.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Error loading requests:", error);
+    requestsList.textContent =
+      "Could not load requests. Please check Firestore Rules.";
+  }
+}
+
+async function updateRequestStatus(requestId, newStatus) {
+  try {
+    await updateDoc(doc(db, "borrowRequests", requestId), {
+      status: newStatus
+    });
+
+    alert("Request " + newStatus + " successfully!");
+    await loadRequests();
+  } catch (error) {
+    console.error("Error updating request:", error);
+    alert("Could not update request. Please check Firestore Rules.");
+  }
+}
+
+
 async function loadItems() {
   if (!itemsList) return;
 
@@ -143,6 +225,7 @@ onAuthStateChanged(auth, async (user) => {
   if (logoutButton) logoutButton.disabled = false;
 
   await loadItems();
+  await loadRequests();
 });
 
 if (addItemForm) {
