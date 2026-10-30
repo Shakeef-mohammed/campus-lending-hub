@@ -1,222 +1,231 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Campus Lending Hub</title>
+  <title>CampusLend | Share More, Spend Less</title>
+  <meta name="description" content="CampusLend helps university students borrow, lend and share useful resources within their campus community.">
 
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/home.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/home.css">
 </head>
 
 <body>
 
-    <header class="navbar">
-        <a href="index.html" class="logo">
-            Campus<span>Lend</span>
-        </a>
+  <!-- Navigation -->
+  <header class="navbar">
+    <a href="index.html" class="logo">CampusLend</a>
 
-        <nav class="nav-links">
-            <a href="index.html" class="active">Home</a>
-            <a href="browse.html">Browse Items</a>
-            <a href="#how-it-works">How It Works</a>
-            <a href="add-resource.html">Add a Resource</a>
-        </nav>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="browse.html">Browse Items</a>
+      <a href="add-resource.html">Share an Item</a>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="login.html">Login</a>
+      <a href="register.html" class="primary-btn">Join Now</a>
+    </nav>
+  </header>
 
-        <div class="nav-buttons">
-            <a href="login.html" class="login-link">Login</a>
-            <a href="register.html" class="register-btn">Get Started</a>
-        </div>
-    </header>
+  <main>
 
-    <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <span class="eyebrow">Your Campus Sharing Community</span>
 
-        <section class="hero">
+        <h1>Share More.<br>Spend Less.</h1>
 
-            <div class="hero-content">
-
-                <p class="eyebrow">YOUR CAMPUS, YOUR COMMUNITY</p>
-
-                <h1>
-                    Borrow What You Need.
-                    <span>Share What You Have.</span>
-                </h1>
-
-                <p class="hero-description">
-                    Connect with fellow students to borrow and lend
-                    useful university resources. Save money, reduce
-                    waste, and help your campus community grow.
-                </p>
-
-                <div class="hero-buttons">
-                    <a href="browse.html" class="primary-btn">
-                        Explore Resources
-                    </a>
-
-                    <a href="register.html" class="secondary-btn">
-                        Join Our Community
-                    </a>
-                </div>
-
-                <div class="hero-note">
-                    <span>✓</span>
-                    A smarter way to share campus resources
-                </div>
-
-            </div>
-
-            <div class="hero-card">
-
-                <div class="card-heading">
-                    <span>Campus Resources</span>
-                    <span class="status-dot"></span>
-                </div>
-
-                <div class="resource-item">
-                    <div class="resource-icon book-icon">📚</div>
-                    <div>
-                        <h3>Academic Resources</h3>
-                        <p>Books and study materials</p>
-                    </div>
-                </div>
-
-                <div class="resource-item">
-                    <div class="resource-icon tech-icon">💻</div>
-                    <div>
-                        <h3>Electronic Equipment</h3>
-                        <p>Laptops and accessories</p>
-                    </div>
-                </div>
-
-                <div class="resource-item">
-                    <div class="resource-icon sports-icon">⚽</div>
-                    <div>
-                        <h3>Sports Equipment</h3>
-                        <p>Gear for campus activities</p>
-                    </div>
-                </div>
-
-                <div class="resource-item">
-                    <div class="resource-icon other-icon">🎒</div>
-                    <div>
-                        <h3>Everyday Essentials</h3>
-                        <p>Useful items for students</p>
-                    </div>
-                </div>
-
-                <a href="browse.html" class="view-resources">
-                    View available resources →
-                </a>
-
-            </div>
-
-        </section>
-
-        <section class="categories">
-
-            <div class="section-heading">
-                <p class="eyebrow">DISCOVER MORE</p>
-                <h2>What do you need today?</h2>
-                <p>
-                    Find useful resources shared by your campus community.
-                </p>
-            </div>
-
-            <div class="category-grid">
-
-                <a href="browse.html?category=books" class="category-card">
-                    <span class="category-icon">📚</span>
-                    <h3>Books</h3>
-                    <p>Textbooks and study guides</p>
-                </a>
-
-                <a href="browse.html?category=electronics" class="category-card">
-                    <span class="category-icon">💻</span>
-                    <h3>Electronics</h3>
-                    <p>Laptops and accessories</p>
-                </a>
-
-                <a href="browse.html?category=sports" class="category-card">
-                    <span class="category-icon">⚽</span>
-                    <h3>Sports</h3>
-                    <p>Sports gear and equipment</p>
-                </a>
-
-                <a href="browse.html?category=other" class="category-card">
-                    <span class="category-icon">🎒</span>
-                    <h3>Other Items</h3>
-                    <p>Everyday campus essentials</p>
-                </a>
-
-            </div>
-
-        </section>
-
-        <section class="how-it-works" id="how-it-works">
-
-            <div class="section-heading">
-                <p class="eyebrow">SIMPLE AND CONVENIENT</p>
-                <h2>How It Works</h2>
-                <p>Get the resources you need in three simple steps.</p>
-            </div>
-
-            <div class="steps-grid">
-
-                <div class="step-card">
-                    <span class="step-number">01</span>
-                    <h3>Create an Account</h3>
-                    <p>
-                        Register using your details to join the
-                        campus lending community.
-                    </p>
-                </div>
-
-                <div class="step-card">
-                    <span class="step-number">02</span>
-                    <h3>Find and Request</h3>
-                    <p>
-                        Browse available items and submit a request
-                        for the resource you need.
-                    </p>
-                </div>
-
-                <div class="step-card">
-                    <span class="step-number">03</span>
-                    <h3>Borrow and Return</h3>
-                    <p>
-                        Coordinate with the item owner, use the item,
-                        and return it on time.
-                    </p>
-                </div>
-
-            </div>
-
-        </section>
-
-        <section class="cta-section">
-            <h2>Have something to share?</h2>
-            <p>
-                Help another student by making useful resources available.
-            </p>
-            <a href="register.html" class="primary-btn">
-                Join the Community
-            </a>
-        </section>
-
-    </main>
-
-    <footer class="footer">
-        <a href="index.html" class="logo">
-            Campus<span>Lend</span>
-        </a>
-
-        <p>Share resources. Support students. Build a better campus.</p>
-
-        <p class="copyright">
-            &copy; 2026 Smart Campus Resource & Gear Lending Hub
+        <p>
+          Borrow what you need. Share what you have.
+          Connect with university students and make campus life easier.
         </p>
-    </footer>
+
+        <div class="hero-search">
+          <input
+            type="search"
+            id="homeSearch"
+            placeholder="Search books, laptops, calculators..."
+            aria-label="Search available items"
+          >
+
+          <button type="button" id="homeSearchButton">
+            Search
+          </button>
+        </div>
+
+        <div style="margin-top: 22px;">
+          <a href="browse.html" class="primary-btn">Explore Items</a>
+          <a href="register.html" class="secondary-btn">Get Started</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories-section">
+      <div class="container">
+
+        <div class="section-title">
+          <span class="eyebrow">Explore</span>
+          <h2>Browse by Category</h2>
+          <p>Find the resources you need for your university life.</p>
+        </div>
+
+        <div class="category-grid">
+
+          <a href="browse.html?category=Books" class="category-card">
+            <span class="icon">📚</span>
+            <h3>Books</h3>
+          </a>
+
+          <a href="browse.html?category=Electronics" class="category-card">
+            <span class="icon">💻</span>
+            <h3>Electronics</h3>
+          </a>
+
+          <a href="browse.html?category=Photography" class="category-card">
+            <span class="icon">📷</span>
+            <h3>Photography</h3>
+          </a>
+
+          <a href="browse.html?category=Sports" class="category-card">
+            <span class="icon">⚽</span>
+            <h3>Sports</h3>
+          </a>
+
+          <a href="browse.html?category=Tools" class="category-card">
+            <span class="icon">🛠️</span>
+            <h3>Tools</h3>
+          </a>
+
+          <a href="browse.html?category=Stationery" class="category-card">
+            <span class="icon">✏️</span>
+            <h3>Stationery</h3>
+          </a>
+
+          <a href="browse.html?category=Other" class="category-card">
+            <span class="icon">📦</span>
+            <h3>Other Items</h3>
+          </a>
+
+          <a href="browse.html" class="category-card">
+            <span class="icon">🔎</span>
+            <h3>View All</h3>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="items-section">
+      <div class="container">
+
+        <div class="section-title">
+          <span class="eyebrow">Simple Process</span>
+          <h2>How CampusLend Works</h2>
+          <p>Start sharing resources in just a few simple steps.</p>
+        </div>
+
+        <div class="category-grid">
+
+          <article class="category-card">
+            <span class="icon">👤</span>
+            <h3>1. Create an Account</h3>
+            <p>Register with your email and verify your account.</p>
+          </article>
+
+          <article class="category-card">
+            <span class="icon">🔍</span>
+            <h3>2. Find an Item</h3>
+            <p>Browse resources shared by other students.</p>
+          </article>
+
+          <article class="category-card">
+            <span class="icon">🤝</span>
+            <h3>3. Request to Borrow</h3>
+            <p>Send a request and communicate with the owner.</p>
+          </article>
+
+          <article class="category-card">
+            <span class="icon">🔄</span>
+            <h3>4. Return the Item</h3>
+            <p>Return the item and let the owner confirm it.</p>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Share CTA -->
+    <section class="hero">
+      <div class="container">
+        <span class="eyebrow">Be Part of the Community</span>
+
+        <h2 class="section-heading">
+          Have Something Others Need?
+        </h2>
+
+        <p>
+          Share your books, equipment and other useful resources
+          with fellow university students.
+        </p>
+
+        <a href="add-resource.html" class="primary-btn">
+          Share an Item
+        </a>
+
+        <a href="register.html" class="secondary-btn">
+          Create Account
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <h3>CampusLend</h3>
+      <p>Building a sharing community among university students.</p>
+
+      <p style="margin-top: 12px;">
+        <a href="browse.html">Browse Items</a> |
+        <a href="login.html">Login</a> |
+        <a href="register.html">Register</a> |
+        <a href="dashboard.html">Dashboard</a>
+      </p>
+
+      <p style="margin-top: 18px;">
+        © 2026 CampusLend. All rights reserved.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    const searchInput = document.getElementById("homeSearch");
+    const searchButton = document.getElementById("homeSearchButton");
+
+    function goToSearch() {
+      const search = searchInput.value.trim();
+
+      if (search) {
+        window.location.href =
+          "browse.html?search=" + encodeURIComponent(search);
+      } else {
+        window.location.href = "browse.html";
+      }
+    }
+
+    searchButton.addEventListener("click", goToSearch);
+
+    searchInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") {
+        goToSearch();
+      }
+    });
+  </script>
 
 </body>
 </html>
