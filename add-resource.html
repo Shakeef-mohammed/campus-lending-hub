@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Add a Resource | CampusLend</title>
+
+    <link rel="stylesheet" href="css/add-resource.css">
+    <script src="js/add-resource.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Navigation Bar -->
+    <header class="navbar">
+        <a href="index.html" class="brand">
+            <span class="brand-icon">🎓</span>
+            <span>CampusLend</span>
+        </a>
+
+        <nav class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="browse.html">Browse Resources</a>
+            <a href="my-borrowings.html">My Borrowings</a>
+            <a href="profile.html">My Profile</a>
+        </nav>
+
+        <a href="profile.html" class="profile-button">
+            My Account
+        </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="page-container">
+
+        <!-- Page Heading -->
+        <section class="page-heading">
+            <a href="browse.html" class="back-link">
+                ← Back to Resources
+            </a>
+
+            <div class="heading-content">
+                <div>
+                    <span class="eyebrow">SHARE WITH YOUR CAMPUS</span>
+
+                    <h1>Add a Resource</h1>
+
+                    <p>
+                        List an item you own and help another student
+                        find the resources they need.
+                    </p>
+                </div>
+
+                <div class="heading-icon">📦</div>
+            </div>
+        </section>
+
+        <!-- Form Layout -->
+        <div class="form-layout">
+
+            <!-- Resource Form -->
+            <section class="form-card">
+
+                <div class="form-card-heading">
+                    <h2>Resource Information</h2>
+                    <p>Complete the details below to list your resource.</p>
+                </div>
+
+                <form id="resourceForm">
+
+                    <!-- Resource Name -->
+                    <div class="form-group">
+                        <label for="resourceName">
+                            Resource Name <span>*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="resourceName"
+                            name="resourceName"
+                            placeholder="e.g. Scientific Calculator"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+
+                    <!-- Category and Condition -->
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="category">
+                                Category <span>*</span>
+                            </label>
+
+                            <select id="category" name="category" required>
+                                <option value="">Select category</option>
+                                <option value="Books">Books & Notes</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Photography">Photography</option>
+                                <option value="Sports">Sports Equipment</option>
+                                <option value="Tools">Tools & Equipment</option>
+                                <option value="Stationery">Stationery</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="condition">
+                                Item Condition <span>*</span>
+                            </label>
+
+                            <select id="condition" name="condition" required>
+                                <option value="">Select condition</option>
+                                <option value="New">New</option>
+                                <option value="Like New">Like New</option>
+                                <option value="Good">Good</option>
+                                <option value="Fair">Fair</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label for="description">
+                            Description <span>*</span>
+                        </label>
+
+                        <textarea
+                            id="description"
+                            name="description"
+                            rows="5"
+                            maxlength="1000"
+                            placeholder="Describe your resource, its features, and any important details..."
+                            required
+                        ></textarea>
+
+                        <small>
+                            Provide enough information for other students.
+                        </small>
+                    </div>
+
+                    <!-- Image Upload -->
+                    <div class="form-group">
+                        <label for="resourceImage">
+                            Resource Image
+                        </label>
+
+                        <div class="upload-box">
+                            <div class="upload-icon">📷</div>
+
+                            <p class="upload-title">
+                                Choose an image of your resource
+                            </p>
+
+                            <p class="upload-description">
+                                Select a JPG, PNG, or WEBP image.
+                            </p>
+
+                            <input
+                                type="file"
+                                id="resourceImage"
+                                name="resourceImage"
+                                accept="image/jpeg,image/png,image/webp"
+                            >
+
+                            <label for="resourceImage" class="upload-button">
+                                Choose Image
+                            </label>
+
+                            <p id="fileName" class="file-name">
+                                No image selected
+                            </p>
+                        </div>
+
+                        <div id="imagePreviewContainer" class="image-preview-container hidden">
+                            <img
+                                id="imagePreview"
+                                src=""
+                                alt="Resource image preview"
+                            >
+
+                            <button
+                                type="button"
+                                id="removeImage"
+                                class="remove-image-button"
+                            >
+                                Remove Image
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h3 class="subheading">Borrowing Details</h3>
+
+                    <!-- Availability and Fee -->
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="availability">
+                                Availability <span>*</span>
+                            </label>
+
+                            <select
+                                id="availability"
+                                name="availability"
+                                required
+                            >
+                                <option value="Available">Available</option>
+                                <option value="Unavailable">Unavailable</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="fee">
+                                Borrowing Fee (LKR)
+                            </label>
+
+                            <input
+                                type="number"
+                                id="fee"
+                                name="fee"
+                                min="0"
+                                max="1000000"
+                                step="0.01"
+                                value="0"
+                                placeholder="0.00"
+                            >
+
+                            <small>
+                                Enter 0 if borrowing is free.
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <!-- Borrowing Duration -->
+                    <div class="form-group">
+                        <label for="maxDays">
+                            Maximum Borrowing Period <span>*</span>
+                        </label>
+
+                        <select id="maxDays" name="maxDays" required>
+                            <option value="">Select borrowing period</option>
+                            <option value="1">1 day</option>
+                            <option value="2">2 days</option>
+                            <option value="3">3 days</option>
+                            <option value="5">5 days</option>
+                            <option value="7">7 days</option>
+                            <option value="14">14 days</option>
+                        </select>
+                    </div>
+
+                    <!-- Pickup Location -->
+                    <div class="form-group">
+                        <label for="location">
+                            Pickup Location <span>*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            id="location"
+                            name="location"
+                            maxlength="150"
+                            placeholder="e.g. Faculty of Applied Sciences"
+                            required
+                        >
+                    </div>
+
+                    <!-- Terms -->
+                    <div class="terms-box">
+                        <input
+                            type="checkbox"
+                            id="confirmOwnership"
+                            required
+                        >
+
+                        <label for="confirmOwnership">
+                            I confirm that I have permission to list this
+                            resource and will provide accurate information.
+                        </label>
+                    </div>
+
+                    <!-- Form Buttons -->
+                    <div class="form-actions">
+                        <button
+                            type="reset"
+                            class="reset-button"
+                        >
+                            Clear Form
+                        </button>
+
+                        <button
+                            type="submit"
+                            class="submit-button"
+                        >
+                            Submit Resource →
+                        </button>
+                    </div>
+
+                    <p
+                        id="formMessage"
+                        class="form-message"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+
+                </form>
+
+            </section>
+
+            <!-- Information Panel -->
+            <aside class="info-column">
+
+                <div class="info-card">
+                    <div class="info-icon">💡</div>
+
+                    <h3>Tips for Listing</h3>
+
+                    <ul>
+                        <li>Use a clear and accurate resource name.</li>
+                        <li>Describe the item's condition honestly.</li>
+                        <li>Upload a clear photo when possible.</li>
+                        <li>Choose a convenient pickup location.</li>
+                        <li>Set a reasonable borrowing period.</li>
+                    </ul>
+                </div>
+
+                <div class="info-card purple-card">
+                    <div class="info-icon">🤝</div>
+
+                    <h3>Share. Borrow. Grow.</h3>
+
+                    <p>
+                        Your unused resources could help another student
+                        complete an assignment, prepare for an examination,
+                        or take part in a campus activity.
+                    </p>
+                </div>
+
+                <div class="info-card notice-card">
+                    <div class="info-icon">🔒</div>
+
+                    <h3>Before You Submit</h3>
+
+                    <p>
+                        This demonstration does not upload images to a server
+                        or save resources permanently. A backend is required
+                        to publish real listings.
+                    </p>
+                </div>
+
+            </aside>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 CampusLend | Smart Campus Resource & Gear Lending Hub</p>
+    </footer>
+
+</body>
+</html>
