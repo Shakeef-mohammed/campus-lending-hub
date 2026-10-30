@@ -1,10 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CampusShare | Dashboard</title>
+    <meta name="theme-color" content="#0f172a">
+
+    <title>CampusShare | Student Dashboard</title>
+
     <link rel="stylesheet" href="dashboard.css">
 </head>
 
@@ -12,18 +14,45 @@
 
     <!-- Sidebar -->
     <aside class="sidebar">
+
         <h2>Campus<span>Share</span></h2>
 
         <p class="menu-label">WORKSPACE</p>
 
-        <a class="active" href="dashboard.html">Dashboard</a>
-        <a href="index.html#items">Browse Items</a>
-        <a href="#receivedRequests">Borrow Requests</a>
-        <a href="#requests">My Requests</a>
-        <a href="#borrowings">My Borrowings</a>
-        <a href="#history">History</a>
+        <a class="active" href="dashboard.html">
+            Dashboard
+        </a>
 
-        <a href="index.html" class="back-home">Back to Home</a>
+        <a href="index.html#items">
+            Browse Items
+        </a>
+
+        <a href="#receivedRequests">
+            Borrow Requests Received
+        </a>
+
+        <a href="#myRequests">
+            My Requests
+        </a>
+
+        <a href="#myBorrowings">
+            My Borrowings
+        </a>
+
+        <a href="#history">
+            History
+        </a>
+
+        <p class="menu-label">ACCOUNT</p>
+
+        <a href="#profile">
+            My Profile
+        </a>
+
+        <a href="index.html" class="back-home">
+            Back to Home
+        </a>
+
     </aside>
 
 
@@ -32,26 +61,38 @@
 
         <!-- Topbar -->
         <header class="topbar">
+
             <div>
                 <h2>Student Dashboard</h2>
                 <p>Manage your campus borrowing activity.</p>
             </div>
 
-            <div>
+            <div class="user-area">
+
                 <span id="userName">Student</span>
-                <button id="logoutButton">Logout</button>
+
+                <button id="logoutButton" type="button">
+                    Logout
+                </button>
+
             </div>
+
         </header>
 
 
         <!-- Welcome Section -->
-        <section class="welcome">
+        <section class="welcome" id="profile">
+
             <h1>
                 Welcome back,
                 <span id="welcomeName">Student</span>!
             </h1>
 
-            <p>Here is an overview of your campus resources.</p>
+            <p>
+                Manage your items, borrowing requests and campus resources
+                from one place.
+            </p>
+
         </section>
 
 
@@ -61,15 +102,18 @@
             <h2>List an Item</h2>
 
             <p style="margin-bottom: 18px; color: #64748b;">
-                Share an item with other campus students.
+                Share an item with other university students.
             </p>
 
             <form id="addItemForm">
 
-                <label for="itemName">Item Name</label>
+                <label for="itemName">
+                    Item Name
+                </label>
 
                 <input
                     id="itemName"
+                    name="itemName"
                     type="text"
                     maxlength="80"
                     required
@@ -77,26 +121,58 @@
                 >
 
 
-                <label for="itemCategory">Category</label>
+                <label for="itemCategory">
+                    Category
+                </label>
 
-                <select id="itemCategory" required>
+                <select
+                    id="itemCategory"
+                    name="itemCategory"
+                    required
+                >
 
-                    <option value="">Choose a category</option>
-                    <option value="Textbooks">Textbooks</option>
-                    <option value="Calculators">Calculators</option>
-                    <option value="Laptops">Laptops</option>
-                    <option value="Cameras">Cameras</option>
-                    <option value="Sports Equipment">Sports Equipment</option>
-                    <option value="Accessories">Accessories</option>
-                    <option value="Other">Other</option>
+                    <option value="">
+                        Choose a category
+                    </option>
+
+                    <option value="Textbooks">
+                        Textbooks
+                    </option>
+
+                    <option value="Calculators">
+                        Calculators
+                    </option>
+
+                    <option value="Laptops">
+                        Laptops
+                    </option>
+
+                    <option value="Cameras">
+                        Cameras
+                    </option>
+
+                    <option value="Sports Equipment">
+                        Sports Equipment
+                    </option>
+
+                    <option value="Accessories">
+                        Accessories
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
 
                 </select>
 
 
-                <label for="itemDescription">Description</label>
+                <label for="itemDescription">
+                    Description
+                </label>
 
                 <textarea
                     id="itemDescription"
+                    name="itemDescription"
                     maxlength="500"
                     rows="3"
                     required
@@ -104,10 +180,13 @@
                 ></textarea>
 
 
-                <label for="itemLocation">Pickup Location</label>
+                <label for="itemLocation">
+                    Pickup Location
+                </label>
 
                 <input
                     id="itemLocation"
+                    name="itemLocation"
                     type="text"
                     maxlength="120"
                     required
@@ -115,13 +194,18 @@
                 >
 
 
-                <button id="addItemButton" type="submit">
+                <button
+                    id="addItemButton"
+                    type="submit"
+                >
                     Add Item
                 </button>
+
 
                 <p
                     id="itemFormMessage"
                     role="status"
+                    aria-live="polite"
                     style="margin-top: 12px;"
                 ></p>
 
@@ -139,10 +223,11 @@
             <h2>Borrow Requests Received</h2>
 
             <p style="margin-bottom: 18px; color: #64748b;">
-                Students requesting your items will appear here.
+                Requests from students who want to borrow your items
+                will appear here.
             </p>
 
-            <div id="requestsList">
+            <div id="requestsList" aria-live="polite">
                 Loading requests...
             </div>
 
@@ -150,95 +235,91 @@
 
 
         <!-- Campus Items -->
-        <section class="dashboard-panel" id="items">
+        <section
+            class="dashboard-panel"
+            id="items"
+        >
 
-            <h2>Campus Items</h2>
+            <h2>My Listed Items</h2>
 
-            <div id="itemsList">
+            <p style="margin-bottom: 18px; color: #64748b;">
+                Items you have shared with the campus community.
+            </p>
+
+            <div id="itemsList" aria-live="polite">
                 <p>Loading items...</p>
             </div>
 
         </section>
 
 
-        <!-- Statistics -->
-        <section class="stats-grid">
+        <!-- My Requests -->
+        <section
+            class="dashboard-panel"
+            id="myRequests"
+        >
 
-            <article class="stat-card">
-                <p>Total Listed Items</p>
-                <h2>8</h2>
-            </article>
+            <h2>My Borrow Requests</h2>
 
-            <article class="stat-card">
-                <p>Pending Requests</p>
-                <h2>2</h2>
-            </article>
+            <p style="color: #64748b;">
+                Your requests to borrow items from other students
+                will appear here.
+            </p>
 
-            <article class="stat-card">
-                <p>Currently Borrowed</p>
-                <h2>1</h2>
-            </article>
-
-            <article class="stat-card">
-                <p>Items Returned</p>
-                <h2>4</h2>
-            </article>
+            <div id="myRequestsList">
+                <p>
+                    Your borrowing request history will be displayed here.
+                </p>
+            </div>
 
         </section>
 
 
-        <!-- Recent Borrowing Requests -->
-        <section class="dashboard-panel" id="requests">
+        <!-- My Borrowings -->
+        <section
+            class="dashboard-panel"
+            id="myBorrowings"
+        >
 
-            <h2>Recent Borrowing Requests</h2>
+            <h2>My Borrowings</h2>
 
-            <div class="table-container">
+            <p style="color: #64748b;">
+                Items you have successfully borrowed will appear here.
+            </p>
 
-                <table>
+            <div id="myBorrowingsList">
+                <p>
+                    Your active borrowings will be displayed here.
+                </p>
+            </div>
 
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Owner</th>
-                            <th>Return Date</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
+        </section>
 
-                    <tbody>
 
-                        <tr>
-                            <td>Scientific Calculator</td>
-                            <td>Student A</td>
-                            <td>October 25, 2026</td>
-                            <td><span class="pending">Pending</span></td>
-                        </tr>
+        <!-- History -->
+        <section
+            class="dashboard-panel"
+            id="history"
+        >
 
-                        <tr>
-                            <td>Programming Textbook</td>
-                            <td>Student D</td>
-                            <td>October 27, 2026</td>
-                            <td><span class="approved">Approved</span></td>
-                        </tr>
+            <h2>Borrowing History</h2>
 
-                        <tr>
-                            <td>Laptop</td>
-                            <td>Student B</td>
-                            <td>October 24, 2026</td>
-                            <td><span class="returned">Returned</span></td>
-                        </tr>
+            <p style="color: #64748b;">
+                Your completed and returned borrowing activities
+                will be displayed here.
+            </p>
 
-                    </tbody>
-
-                </table>
-
+            <div id="historyList">
+                <p>
+                    Your borrowing history will be displayed here.
+                </p>
             </div>
 
         </section>
 
 
         <!-- Quick Actions -->
-        <section class="dashboard-panel" id="history">
+        <section class="dashboard-panel" id="quickActions">
 
             <h2>Quick Actions</h2>
 
@@ -246,6 +327,10 @@
 
                 <a href="index.html#items">
                     Browse Campus Resources
+                </a>
+
+                <a href="#addItemPanel">
+                    List an Item
                 </a>
 
                 <a href="index.html">
@@ -257,16 +342,19 @@
         </section>
 
 
-        <!-- Footer Note -->
-        <p class="demo-note">
-            This dashboard uses sample data for some sections.
-            Real borrowing records are loaded from Firebase.
-        </p>
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+
+            <p>
+                CampusShare – Share Resources, Build Community.
+            </p>
+
+        </footer>
 
     </main>
 
 
-    <!-- Firebase Dashboard JavaScript -->
+    <!-- Dashboard JavaScript -->
     <script type="module" src="dashboard.js"></script>
 
 </body>
