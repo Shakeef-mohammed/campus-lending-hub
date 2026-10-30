@@ -1,394 +1,350 @@
 
-import { auth, db } from "./firebase-config.js";
+import { auth, db } from "../firebase-config.js";
 
 import {
-    onAuthStateChanged
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 import {
-    collection,
-    doc,
-    getDoc,
-    runTransaction,
-    serverTimestamp
+  collection,
+  doc,
+  getDoc,
+  runTransaction,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+const params = new URLSearchParams(window.location.search);
+const itemId = params.get("item");
+
 const detailsMessage = document.getElementById("detailsMessage");
-const itemDetails = document.getElementById("item-details");
+const detailsSection = document.getElementById("item-details");
 
 const borrowForm = document.getElementById("borrowForm");
 const borrowButton = document.getElementById("borrowButton");
 const borrowMessage = document.getElementById("borrowMessage");
 
-const startDateInput = document.getElementById("startDate");
-const endDateInput = document.getElementById("endDate");
-
-const itemId = new URLSearchParams(window.location.search).get("item");
+const currentItemRef = itemId
+  ? doc(db, "items", itemId)
+  : null;
 
 let currentUser = null;
-let selectedItem = null;
-let authReady = false;
+let currentItem = null;
+let itemLoaded = false;
+let requestSubmitted = false;
 
-function showDetailsMessage(message, type = "info") {
-    detailsMessage.textContent = message;
-    detailsMessage.className = `details-message ${type}`;
+function showMessage(element, message, type = "info") {
+  if (!element) return;
+
+  element.textContent = message;
+  element.className = `details-message ${type}`;
 }
 
-function showBorrowMessage(message, type = "info") {
-    borrowMessage.textContent = message;
-    borrowMessage.className = type;
-}
+function setBorrowButtonState(disabled, text) {
+  if (!borrowButton) return;
 
-function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    })[character]);
+  borrowButton.disabled = disabled;
+
+  if (text) {
+    borrowButton.textContent = text;
+  }
 }
 
 function formatFee(fee) {
-    const amount = Number(fee ?? 0);
+  const amount = Number(fee || 0);
 
-    if (!Number.isFinite(amount) || amount <= 0) {
-        return "Free";
+  return amount <= 0
+    ? "Free"
+    : `Rs. ${amount.toLocaleString("en-LK")}`;
+}
+
+function displayItem(item) {
+  if (!detailsSection) return;
+
+  const fields = {
+    itemName: item.name || "Untitled item",
+    itemCategory: item.category || "Other",
+    itemDescription: item.description || "No description provided.",
+    itemCondition: item.condition || "Not specified",
+    itemLocation: item.location || "Not specified",
+    itemFee: formatFee(item.fee),
+    itemDuration: item.maxDuration
+      ? `${item.maxDuration} days`
+      : "Not specified",
+    ownerName: item.ownerName || "CampusShare member"
+  };
+
+  Object.entries(fields).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+
+    if (element) {
+      element.textContent = value;
     }
+  });
 
-    return `Rs. ${amount.toLocaleString("en-LK")}`;
+  const availability = document.getElementById("itemAvailability");
+
+  if (availability) {
+    availability.textContent =
+      item.available === true && !item.activeRequestId
+        ? "Available"
+        : "Currently unavailable";
+  }
+
+  detailsSection.hidden = false;
+
+  if (detailsMessage) {
+    detailsMessage.textContent = "";
+  }
 }
 
-function getCategoryIcon(category) {
-    const icons = {
-        Books: "📚",
-        Electronics: "💻",
-        Photography: "📷",
-        Sports: "⚽",
-        Tools: "🛠️",
-        Stationery: "📝",
-        Other: "🎒"
-    };
+function updateAvailability() {
+  if (!currentItem || !itemLoaded) return;
 
-    return icons[category] || "📦";
-}
+  const available =
+    currentItem.available === true &&
+    !currentItem.activeRequestId;
 
-function setBorrowingEnabled(enabled) {
-    borrowButton.disabled = !enabled;
-    borrowButton.textContent = enabled
-        ? "Send Borrow Request"
-        : "Currently Unavailable";
-}
+  if (!available) {
+    setBorrowButtonState(true, "Currently Unavailable");
+    return;
+  }
 
-function renderItem(item) {
-    selectedItem = item;
+  if (currentUser && currentItem.ownerId === currentUser.uid) {
+    setBorrowButtonState(true, "Your Own Item");
+    return;
+  }
 
-    document.title = `${item.name || "Resource"} | CampusLend`;
+  if (!currentUser) {
+    setBorrowButtonState(false, "Login to Request");
+    return;
+  }
 
-    document.getElementById("itemName").textContent =
-        item.name || "Untitled Resource";
+  if (!currentUser.emailVerified) {
+    setBorrowButtonState(true, "Verify Email First");
+    return;
+  }
 
-    document.getElementById("itemCategory").textContent =
-        item.category || "Other";
-
-    document.getElementById("itemDescription").textContent =
-        item.description || "No description available.";
-
-    document.getElementById("itemCondition").textContent =
-        item.condition || "Not specified";
-
-    document.getElementById("itemLocation").textContent =
-        item.location || "Not specified";
-
-    document.getElementById("itemFee").textContent =
-        formatFee(item.fee);
-
-    document.getElementById("itemDuration").textContent =
-        item.maxDuration
-            ? `${item.maxDuration} days`
-            : "Not specified";
-
-    document.getElementById("ownerName").textContent =
-        item.ownerName || "Campus Member";
-
-    document.getElementById("itemIcon").textContent =
-        getCategoryIcon(item.category);
-
-    const available = item.available === true &&
-        !item.activeRequestId;
-
-    const badge = document.getElementById("availabilityBadge");
-
-    badge.textContent = available ? "Available" : "Unavailable";
-    badge.classList.toggle("unavailable", !available);
-
-    if (!available) {
-        setBorrowingEnabled(false);
-    }
-
-    itemDetails.hidden = false;
-    detailsMessage.hidden = true;
+  setBorrowButtonState(false, "Request to Borrow");
 }
 
 async function loadItem() {
-    if (!itemId) {
-        showDetailsMessage("Invalid resource link.", "error");
-        return;
+  if (!itemId || !currentItemRef) {
+    showMessage(detailsMessage, "Invalid item link.", "error");
+    setBorrowButtonState(true);
+    return;
+  }
+
+  try {
+    const snapshot = await getDoc(currentItemRef);
+
+    if (!snapshot.exists()) {
+      showMessage(detailsMessage, "Item not found.", "error");
+      setBorrowButtonState(true);
+      return;
     }
 
-    try {
-        const itemRef = doc(db, "items", itemId);
-        const itemSnapshot = await getDoc(itemRef);
+    currentItem = {
+      id: snapshot.id,
+      ...snapshot.data()
+    };
 
-        if (!itemSnapshot.exists()) {
-            showDetailsMessage("This resource could not be found.", "error");
-            return;
-        }
+    itemLoaded = true;
 
-        renderItem({
-            id: itemSnapshot.id,
-            ...itemSnapshot.data()
-        });
+    displayItem(currentItem);
+    updateAvailability();
 
-    } catch (error) {
-        console.error("Error loading item:", error);
-        showDetailsMessage(
-            "Unable to load this resource. Please try again.",
-            "error"
-        );
-    }
-}
+  } catch (error) {
+    console.error("Item loading failed:", error);
 
-function getDateValue(date) {
-    return new Date(`${date}T00:00:00`);
-}
-
-function validateDates() {
-    const startValue = startDateInput.value;
-    const endValue = endDateInput.value;
-
-    if (!startValue || !endValue) {
-        return "Please select both borrowing dates.";
-    }
-
-    const startDate = getDateValue(startValue);
-    const endDate = getDateValue(endValue);
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (Number.isNaN(startDate.getTime()) ||
-        Number.isNaN(endDate.getTime())) {
-        return "Please enter valid dates.";
-    }
-
-    if (startDate < today) {
-        return "The start date cannot be in the past.";
-    }
-
-    if (endDate <= startDate) {
-        return "The return date must be after the start date.";
-    }
-
-    const duration = Math.ceil(
-        (endDate - startDate) / (1000 * 60 * 60 * 24)
+    showMessage(
+      detailsMessage,
+      "Unable to load item details. Please try again.",
+      "error"
     );
 
-    const maximumDuration = Number(selectedItem?.maxDuration || 0);
-
-    if (maximumDuration > 0 && duration > maximumDuration) {
-        return `Maximum borrowing duration is ${maximumDuration} days.`;
-    }
-
-    return null;
+    setBorrowButtonState(true);
+  }
 }
 
-function setFormSubmitting(submitting) {
-    borrowButton.disabled = submitting;
-    borrowButton.textContent = submitting
-        ? "Sending Request..."
-        : "Send Borrow Request";
+function getDateValue(id) {
+  return document.getElementById(id)?.value || "";
 }
 
-async function sendBorrowRequest(event) {
-    event.preventDefault();
+function validateDates(startDate, endDate) {
+  if (!startDate || !endDate) {
+    throw new Error("Please select both start and end dates.");
+  }
 
-    if (!authReady || !currentUser) {
-        showBorrowMessage(
-            "Please login before requesting to borrow this item.",
-            "error"
-        );
+  const start = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+  const today = new Date();
 
-        window.location.href = "login.html";
-        return;
-    }
+  today.setHours(0, 0, 0, 0);
 
-    try {
-        await currentUser.reload();
-        currentUser = auth.currentUser;
+  if (
+    Number.isNaN(start.getTime()) ||
+    Number.isNaN(end.getTime())
+  ) {
+    throw new Error("Please enter valid dates.");
+  }
 
-        if (!currentUser || !currentUser.emailVerified) {
-            showBorrowMessage(
-                "Please verify your email before borrowing resources.",
-                "error"
-            );
+  if (start < today) {
+    throw new Error("Start date cannot be in the past.");
+  }
 
-            return;
-        }
+  if (end <= start) {
+    throw new Error("End date must be after the start date.");
+  }
 
-        if (!selectedItem) {
-            showBorrowMessage("Resource details are not available.", "error");
-            return;
-        }
+  const duration = Math.ceil(
+    (end.getTime() - start.getTime()) / 86400000
+  );
 
-        if (selectedItem.ownerId === currentUser.uid) {
-            showBorrowMessage(
-                "You cannot borrow your own resource.",
-                "error"
-            );
+  if (
+    currentItem.maxDuration > 0 &&
+    duration > currentItem.maxDuration
+  ) {
+    throw new Error(
+      `Maximum borrowing duration is ${currentItem.maxDuration} days.`
+    );
+  }
 
-            return;
-        }
-
-        const dateError = validateDates();
-
-        if (dateError) {
-            showBorrowMessage(dateError, "error");
-            return;
-        }
-
-        const itemRef = doc(db, "items", itemId);
-
-        const requestRef = doc(collection(db, "borrowRequests"));
-
-        const borrowerName =
-            currentUser.displayName ||
-            currentUser.email.split("@")[0];
-
-        setFormSubmitting(true);
-        showBorrowMessage("Sending your borrow request...", "info");
-
-        await runTransaction(db, async transaction => {
-            const itemSnapshot = await transaction.get(itemRef);
-
-            if (!itemSnapshot.exists()) {
-                throw new Error("ITEM_NOT_FOUND");
-            }
-
-            const latestItem = itemSnapshot.data();
-
-            if (latestItem.ownerId === currentUser.uid) {
-                throw new Error("OWN_ITEM");
-            }
-
-            if (
-                latestItem.available !== true ||
-                latestItem.activeRequestId
-            ) {
-                throw new Error("ITEM_UNAVAILABLE");
-            }
-
-            transaction.set(requestRef, {
-                itemId: itemId,
-                itemName: latestItem.name || "Resource",
-                ownerId: latestItem.ownerId,
-                ownerName: latestItem.ownerName || "Campus Member",
-                borrowerId: currentUser.uid,
-                borrowerName: borrowerName,
-                status: "pending",
-                startDate: startDateInput.value,
-                endDate: endDateInput.value,
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
-            });
-
-            transaction.update(itemRef, {
-                available: false,
-                activeRequestId: requestRef.id,
-                updatedAt: serverTimestamp()
-            });
-        });
-
-        showBorrowMessage(
-            "Your borrow request has been sent successfully!",
-            "success"
-        );
-
-        borrowForm.reset();
-        setBorrowingEnabled(false);
-
-    } catch (error) {
-        console.error("Borrow request error:", error);
-
-        const messages = {
-            ITEM_NOT_FOUND: "This resource no longer exists.",
-            OWN_ITEM: "You cannot borrow your own resource.",
-            ITEM_UNAVAILABLE: "This item is no longer available."
-        };
-
-        showBorrowMessage(
-            messages[error.message] ||
-            "Unable to send your request. Please try again.",
-            "error"
-        );
-
-        if (error.code === "permission-denied") {
-            showBorrowMessage(
-                "Permission denied. Please check your account verification and Firestore Rules.",
-                "error"
-            );
-        }
-
-    } finally {
-        setFormSubmitting(false);
-    }
+  return { startDate, endDate };
 }
 
-function setDateMinimums() {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
+async function submitBorrowRequest(event) {
+  event.preventDefault();
 
-    const minimumDate = `${year}-${month}-${day}`;
+  if (!currentUser) {
+    showMessage(
+      borrowMessage,
+      "Please login before requesting this item.",
+      "error"
+    );
 
-    startDateInput.min = minimumDate;
-    endDateInput.min = minimumDate;
+    window.location.href = "login.html";
+    return;
+  }
 
-    startDateInput.addEventListener("change", () => {
-        endDateInput.min = startDateInput.value || minimumDate;
+  if (requestSubmitted) return;
 
-        if (
-            endDateInput.value &&
-            endDateInput.value <= startDateInput.value
-        ) {
-            endDateInput.value = "";
-        }
+  try {
+    await currentUser.reload();
+    currentUser = auth.currentUser;
+
+    if (!currentUser?.emailVerified) {
+      showMessage(
+        borrowMessage,
+        "Please verify your email before requesting an item.",
+        "error"
+      );
+      return;
+    }
+
+    if (!currentItem || !itemLoaded) {
+      throw new Error("Item details are not ready.");
+    }
+
+    if (currentItem.ownerId === currentUser.uid) {
+      throw new Error("You cannot borrow your own item.");
+    }
+
+    const { startDate, endDate } = validateDates(
+      getDateValue("startDate"),
+      getDateValue("endDate")
+    );
+
+    setBorrowButtonState(true, "Sending Request...");
+
+    const requestRef = doc(collection(db, "borrowRequests"));
+
+    await runTransaction(db, async transaction => {
+      const itemSnapshot = await transaction.get(currentItemRef);
+
+      if (!itemSnapshot.exists()) {
+        throw new Error("This item no longer exists.");
+      }
+
+      const item = itemSnapshot.data();
+
+      if (item.ownerId === currentUser.uid) {
+        throw new Error("You cannot borrow your own item.");
+      }
+
+      if (item.available !== true || item.activeRequestId) {
+        throw new Error("Sorry, this item is no longer available.");
+      }
+
+      transaction.set(requestRef, {
+        itemId,
+        itemName: item.name || "",
+        ownerId: item.ownerId,
+        ownerName: item.ownerName || "",
+        borrowerId: currentUser.uid,
+        borrowerName:
+          currentUser.displayName ||
+          currentUser.email ||
+          "CampusShare member",
+        status: "pending",
+        startDate,
+        endDate,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+
+      transaction.update(currentItemRef, {
+        available: false,
+        activeRequestId: requestRef.id,
+        updatedAt: serverTimestamp()
+      });
     });
+
+    requestSubmitted = true;
+
+    currentItem.available = false;
+    currentItem.activeRequestId = requestRef.id;
+
+    setBorrowButtonState(true, "Request Sent");
+
+    showMessage(
+      borrowMessage,
+      "Your borrow request has been sent successfully. You can track it from your dashboard.",
+      "success"
+    );
+
+  } catch (error) {
+    console.error("Borrow request failed:", error);
+
+    showMessage(
+      borrowMessage,
+      error.message || "Unable to send your request.",
+      "error"
+    );
+
+    updateAvailability();
+
+  } finally {
+    if (!requestSubmitted) {
+      updateAvailability();
+    }
+  }
 }
 
-setDateMinimums();
-
-borrowForm.addEventListener("submit", sendBorrowRequest);
+borrowForm?.addEventListener("submit", submitBorrowRequest);
 
 onAuthStateChanged(auth, async user => {
-    if (!user) {
-        currentUser = null;
-        authReady = true;
-        return;
-    }
+  currentUser = user;
 
+  if (user) {
     try {
-        await user.reload();
-
-        currentUser = auth.currentUser;
-        authReady = true;
-
+      await user.reload();
+      currentUser = auth.currentUser;
     } catch (error) {
-        console.error("Authentication check failed:", error);
-        currentUser = null;
-        authReady = true;
+      console.error("Authentication refresh failed:", error);
     }
+  }
+
+  updateAvailability();
 });
 
 loadItem();
