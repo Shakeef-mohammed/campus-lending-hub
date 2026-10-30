@@ -2,238 +2,259 @@
 import { db } from "../firebase-config.js";
 
 import {
-    collection,
-    getDocs,
-    query,
-    where
+  collection,
+  getDocs,
+  query,
+  where
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
 const resourceGrid = document.getElementById("resourceGrid");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
-const categoryFilters = document.getElementById("categoryFilters");
 const resultCount = document.getElementById("resultCount");
 const noResults = document.getElementById("noResults");
 const resetSearch = document.getElementById("resetSearch");
 const browseMessage = document.getElementById("browseMessage");
 
+const categoryButtons = document.querySelectorAll("[data-category]");
+
+const params = new URLSearchParams(window.location.search);
+
 let allResources = [];
-let selectedCategory = "all";
+let selectedCategory = params.get("category") || "all";
+let searchTerm = params.get("search") || "";
 
-function showMessage(message, type = "info") {
-    browseMessage.textContent = message;
-    browseMessage.className = `browse-message ${type}`;
-}
+const categoryIcons = {
+  Books: "📚",
+  Electronics: "💻",
+  Photography: "📷",
+  Sports: "⚽",
+  Tools: "🛠️",
+  Stationery: "✏️",
+  Other: "📦"
+};
 
-function escapeHTML(value) {
-    return String(value ?? "").replace(/[&<>"']/g, character => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;"
-    })[character]);
-}
-
-function formatFee(fee) {
-    const amount = Number(fee ?? 0);
-
-    if (!Number.isFinite(amount) || amount <= 0) {
-        return "Free";
-    }
-
-    return `Rs. ${amount.toLocaleString("en-LK")}`;
+function escapeHTML(value = "") {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[character]);
 }
 
 function getCategoryIcon(category) {
-    const icons = {
-        Books: "📚",
-        Electronics: "💻",
-        Photography: "📷",
-        Sports: "⚽",
-        Tools: "🛠️",
-        Stationery: "📝",
-        Other: "🎒"
-    };
-
-    return icons[category] || "📦";
+  return categoryIcons[category] || "📦";
 }
 
-function createResourceCard(resource) {
-    const card = document.createElement("article");
-    card.className = "resource-card";
+function formatFee(fee) {
+  const amount = Number(fee || 0);
 
-    const name = escapeHTML(resource.name || "Untitled Resource");
-    const category = escapeHTML(resource.category || "Other");
-    const condition = escapeHTML(resource.condition || "Not specified");
-    const location = escapeHTML(resource.location || "Location not specified");
-    const owner = escapeHTML(resource.ownerName || "Campus Member");
-    const description = escapeHTML(resource.description || "No description available.");
+  return amount <= 0
+    ? "Free"
+    : `Rs. ${amount.toLocaleString("en-LK")}`;
+}
 
-    card.innerHTML = `
-        <div class="resource-image">
-            <span class="resource-icon">
-                ${getCategoryIcon(resource.category)}
-            </span>
-            <span class="resource-badge">Available</span>
-        </div>
+function showBrowseMessage(message) {
+  if (!browseMessage) return;
 
-        <div class="resource-content">
-            <span class="resource-category">${category}</span>
+  browseMessage.textContent = message;
+  browseMessage.style.display = "block";
+}
 
-            <h3>${name}</h3>
+function hideBrowseMessage() {
+  if (!browseMessage) return;
 
-            <p class="resource-description">${description}</p>
+  browseMessage.textContent = "";
+  browseMessage.style.display = "none";
+}
 
-            <div class="resource-meta">
-                <span>Condition: ${condition}</span>
-                <span>📍 ${location}</span>
-            </div>
+function updateCategoryButtons() {
+  categoryButtons.forEach(button => {
+    const category = button.dataset.category || "all";
 
-            <div class="resource-owner">
-                Shared by ${owner}
-            </div>
-
-            <div class="resource-card-bottom">
-                <strong>${formatFee(resource.fee)}</strong>
-
-                <a href="item-details.html?item=${encodeURIComponent(resource.id)}"
-                   class="primary-btn">
-                    View Details
-                </a>
-            </div>
-        </div>
-    `;
-
-    return card;
+    button.classList.toggle(
+      "active",
+      category.toLowerCase() === selectedCategory.toLowerCase()
+    );
+  });
 }
 
 function renderResources(resources) {
-    resourceGrid.innerHTML = "";
+  if (!resourceGrid) return;
 
+  resourceGrid.innerHTML = "";
+
+  if (resultCount) {
     resultCount.textContent =
-        `${resources.length} resource${resources.length === 1 ? "" : "s"} found`;
+      `${resources.length} item${resources.length === 1 ? "" : "s"} found`;
+  }
 
-    if (resources.length === 0) {
-        noResults.hidden = false;
-        return;
-    }
+  if (resources.length === 0) {
+    if (noResults) noResults.style.display = "block";
+    return;
+  }
 
-    noResults.hidden = true;
+  if (noResults) noResults.style.display = "none";
 
-    const fragment = document.createDocumentFragment();
+  resources.forEach(resource => {
+    const card = document.createElement("article");
+    card.className = "resource-card";
 
-    resources.forEach(resource => {
-        fragment.appendChild(createResourceCard(resource));
-    });
+    const icon = getCategoryIcon(resource.category);
 
-    resourceGrid.appendChild(fragment);
+    card.innerHTML = `
+      <div class="resource-image">
+        <span>${icon}</span>
+      </div>
+
+      <div class="resource-content">
+        <span class="resource-category">
+          ${escapeHTML(resource.category || "Other")}
+        </span>
+
+        <h3>${escapeHTML(resource.name || "Untitled item")}</h3>
+
+        <p>${escapeHTML(
+          resource.description || "No description available."
+        )}</p>
+
+        <div class="resource-details">
+          <span>📍 ${escapeHTML(
+            resource.location || "Location not specified"
+          )}</span>
+
+          <span>💰 ${formatFee(resource.fee)}</span>
+        </div>
+
+        <p class="resource-owner">
+          Owner: ${escapeHTML(
+            resource.ownerName || "CampusLend member"
+          )}
+        </p>
+
+        <a
+          class="resource-view-btn"
+          href="item-details.html?item=${encodeURIComponent(resource.id)}"
+        >
+          View Details
+        </a>
+      </div>
+    `;
+
+    resourceGrid.appendChild(card);
+  });
 }
 
 function applyFilters() {
-    const searchTerm = searchInput.value.trim().toLowerCase();
+  const term = (searchInput?.value || searchTerm)
+    .trim()
+    .toLowerCase();
 
-    const filteredResources = allResources.filter(resource => {
-        const matchesCategory =
-            selectedCategory === "all" ||
-            String(resource.category || "").toLowerCase() ===
-            selectedCategory.toLowerCase();
+  const filtered = allResources.filter(resource => {
+    const matchesCategory =
+      selectedCategory.toLowerCase() === "all" ||
+      (resource.category || "").toLowerCase() ===
+        selectedCategory.toLowerCase();
 
-        const searchableText = [
-            resource.name,
-            resource.category,
-            resource.description,
-            resource.location,
-            resource.ownerName,
-            resource.condition
-        ].join(" ").toLowerCase();
+    const searchableText = [
+      resource.name,
+      resource.description,
+      resource.category,
+      resource.location,
+      resource.ownerName
+    ].join(" ").toLowerCase();
 
-        const matchesSearch = searchableText.includes(searchTerm);
+    const matchesSearch = searchableText.includes(term);
 
-        return matchesCategory && matchesSearch;
-    });
+    return matchesCategory && matchesSearch;
+  });
 
-    renderResources(filteredResources);
+  renderResources(filtered);
+  updateCategoryButtons();
+  hideBrowseMessage();
 }
 
 async function loadResources() {
-    resourceGrid.innerHTML =
-        '<div class="loading-message">Loading available resources...</div>';
+  if (!resourceGrid) return;
 
-    noResults.hidden = true;
-    resultCount.textContent = "Loading resources...";
+  resourceGrid.innerHTML = "<p>Loading available items...</p>";
 
-    try {
-        const itemsQuery = query(
-            collection(db, "items"),
-            where("available", "==", true)
-        );
+  try {
+    const itemsQuery = query(
+      collection(db, "items"),
+      where("available", "==", true)
+    );
 
-        const snapshot = await getDocs(itemsQuery);
+    const snapshot = await getDocs(itemsQuery);
 
-        allResources = snapshot.docs.map(document => ({
-            id: document.id,
-            ...document.data()
-        }));
+    allResources = snapshot.docs
+      .map(itemDoc => ({
+        id: itemDoc.id,
+        ...itemDoc.data()
+      }))
+      .filter(resource => !resource.activeRequestId)
+      .sort((a, b) => {
+        const dateA = a.createdAt?.toMillis?.() || 0;
+        const dateB = b.createdAt?.toMillis?.() || 0;
+        return dateB - dateA;
+      });
 
-        allResources.sort((a, b) => {
-            const dateA = a.createdAt?.toMillis?.() || 0;
-            const dateB = b.createdAt?.toMillis?.() || 0;
-
-            return dateB - dateA;
-        });
-
-        applyFilters();
-
-        if (allResources.length === 0) {
-            showMessage("No available resources have been listed yet.");
-        } else {
-            showMessage("");
-        }
-
-    } catch (error) {
-        console.error("Error loading resources:", error);
-
-        resourceGrid.innerHTML = "";
-        resultCount.textContent = "Unable to load resources.";
-
-        showMessage(
-            "Could not load resources. Please check your connection and try again.",
-            "error"
-        );
+    if (searchInput) {
+      searchInput.value = searchTerm;
     }
+
+    applyFilters();
+
+  } catch (error) {
+    console.error("Unable to load resources:", error);
+
+    resourceGrid.innerHTML = "";
+
+    showBrowseMessage(
+      "Unable to load items. Please refresh the page and try again."
+    );
+  }
 }
 
-searchInput.addEventListener("input", applyFilters);
+function resetFilters() {
+  selectedCategory = "all";
+  searchTerm = "";
 
-searchButton.addEventListener("click", applyFilters);
+  if (searchInput) searchInput.value = "";
 
-categoryFilters.addEventListener("click", event => {
-    const button = event.target.closest("[data-category]");
+  const newUrl = new URL(window.location.href);
+  newUrl.search = "";
+  window.history.replaceState({}, "", newUrl);
 
-    if (!button) return;
+  applyFilters();
+}
 
-    selectedCategory = button.dataset.category;
-
-    categoryFilters.querySelectorAll("[data-category]").forEach(item => {
-        item.classList.toggle("active", item === button);
-    });
-
+categoryButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    selectedCategory = button.dataset.category || "all";
     applyFilters();
+  });
 });
 
-resetSearch.addEventListener("click", () => {
-    searchInput.value = "";
-    selectedCategory = "all";
-
-    categoryFilters.querySelectorAll("[data-category]").forEach(button => {
-        button.classList.toggle(
-            "active",
-            button.dataset.category === "all"
-        );
-    });
-
-    applyFilters();
+searchButton?.addEventListener("click", () => {
+  searchTerm = searchInput?.value.trim() || "";
+  applyFilters();
 });
+
+searchInput?.addEventListener("input", () => {
+  searchTerm = searchInput.value.trim();
+  applyFilters();
+});
+
+searchInput?.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    searchTerm = searchInput.value.trim();
+    applyFilters();
+  }
+});
+
+resetSearch?.addEventListener("click", resetFilters);
 
 loadResources();
