@@ -1,10 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Share useful resources with your university community.">
     <title>Add a Resource | CampusLend</title>
-    <link rel="stylesheet" href="css/add-resource.css">
+    <link rel="stylesheet" href="add-resource.css">
 </head>
 <body>
 
@@ -51,13 +53,8 @@
 
                 <div class="form-group">
                     <label for="resourceName">Resource Name <span>*</span></label>
-                    <input
-                        type="text"
-                        id="resourceName"
-                        maxlength="100"
-                        placeholder="e.g. Scientific Calculator"
-                        required
-                    >
+                    <input type="text" id="resourceName" maxlength="100"
+                        placeholder="e.g. Scientific Calculator" required>
                 </div>
 
                 <div class="form-row">
@@ -89,13 +86,9 @@
 
                 <div class="form-group">
                     <label for="description">Description <span>*</span></label>
-                    <textarea
-                        id="description"
-                        rows="5"
-                        maxlength="1000"
+                    <textarea id="description" rows="5" maxlength="1000"
                         placeholder="Describe your resource and any important details..."
-                        required
-                    ></textarea>
+                        required></textarea>
                 </div>
 
                 <div class="image-upload-notice">
@@ -118,15 +111,8 @@
 
                     <div class="form-group">
                         <label for="fee">Borrowing Fee (LKR)</label>
-                        <input
-                            type="number"
-                            id="fee"
-                            min="0"
-                            max="1000000"
-                            step="0.01"
-                            value="0"
-                            required
-                        >
+                        <input type="number" id="fee" min="0" max="1000000"
+                            step="0.01" value="0" required>
                         <small>Enter 0 if borrowing is free.</small>
                     </div>
                 </div>
@@ -146,13 +132,8 @@
 
                 <div class="form-group">
                     <label for="location">Pickup Location <span>*</span></label>
-                    <input
-                        type="text"
-                        id="location"
-                        maxlength="150"
-                        placeholder="e.g. Faculty of Computing"
-                        required
-                    >
+                    <input type="text" id="location" maxlength="150"
+                        placeholder="e.g. Faculty of Computing" required>
                 </div>
 
                 <div class="terms-box">
@@ -169,7 +150,8 @@
                     </button>
                 </div>
 
-                <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+                <p id="formMessage" class="form-message"
+                    role="status" aria-live="polite"></p>
 
             </form>
         </section>
@@ -196,7 +178,7 @@
             <div class="info-card notice-card">
                 <div class="info-icon">🔒</div>
                 <h3>Secure Listings</h3>
-                <p>Only authenticated and email-verified users can publish resources. Firestore Security Rules will enforce access permissions.</p>
+                <p>Only authenticated and email-verified users can publish resources. Firestore Security Rules must enforce access permissions.</p>
             </div>
 
         </aside>
@@ -207,7 +189,7 @@
     <p>© 2026 CampusLend | Smart Campus Resource & Gear Lending Hub</p>
 </footer>
 
-<script type="module" src="js/add-resource.js"></script>
+<script type="module" src="add-resource.js"></script>
 
 </body>
 </html>
