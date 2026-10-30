@@ -1,348 +1,239 @@
 
-/* ==================================
-   CAMPUSLEND BROWSE RESOURCES PAGE
-   ================================== */
+import { db } from "../firebase-config.js";
 
+import {
+    collection,
+    getDocs,
+    query,
+    where
+} from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
+
+const resourceGrid = document.getElementById("resourceGrid");
 const searchInput = document.getElementById("searchInput");
 const searchButton = document.getElementById("searchButton");
-const categoryButtons = document.querySelectorAll(".category-button");
-const resourceCount = document.getElementById("resourceCount");
+const categoryFilters = document.getElementById("categoryFilters");
+const resultCount = document.getElementById("resultCount");
 const noResults = document.getElementById("noResults");
-const resetSearchButton = document.getElementById("resetSearch");
+const resetSearch = document.getElementById("resetSearch");
+const browseMessage = document.getElementById("browseMessage");
 
+let allResources = [];
 let selectedCategory = "all";
 
-const initialCards = document.querySelectorAll(".resource-card");
-
-const resourceContainer = initialCards.length
-    ? initialCards[0].parentElement
-    : null;
-
-
-/* ==================================
-   LOAD SAVED RESOURCES
-   ================================== */
-
-function getSavedResources() {
-    try {
-        const resources = JSON.parse(
-            localStorage.getItem("campusResources") || "[]"
-        );
-
-        return Array.isArray(resources) ? resources : [];
-    } catch (error) {
-        console.error("Could not read saved resources:", error);
-        return [];
-    }
+function showMessage(message, type = "info") {
+    browseMessage.textContent = message;
+    browseMessage.className = `browse-message ${type}`;
 }
 
-
-/* ==================================
-   CREATE SAVED RESOURCE CARDS
-   ================================== */
-
-function displaySavedResources() {
-    if (!resourceContainer) {
-        console.error("Could not find the resource cards container.");
-        return;
-    }
-
-    // Remove old generated cards before rebuilding them.
-    resourceContainer.querySelectorAll(".saved-resource-card").forEach(
-        card => card.remove()
-    );
-
-    const savedResources = getSavedResources();
-
-    savedResources.forEach(function (resource) {
-        const card = document.createElement("article");
-
-        card.className = "resource-card saved-resource-card";
-
-        // This ID opens the correct resource on the details page.
-        card.dataset.resourceId = String(resource.id);
-
-        card.dataset.name = (resource.name || "").toLowerCase();
-        card.dataset.category = (resource.category || "")
-            .toLowerCase()
-            .trim();
-
-        card.tabIndex = 0;
-        card.setAttribute("role", "link");
-        card.setAttribute(
-            "aria-label",
-            "View details for " + (resource.name || "this resource")
-        );
-        card.style.cursor = "pointer";
-
-        // Resource image
-        const image = document.createElement("img");
-
-        image.className = "resource-image";
-        image.alt = resource.name || "Campus resource";
-
-        image.src = resource.image ||
-            "https://placehold.co/400x250?text=CampusLend";
-
-        image.onerror = function () {
-            image.onerror = null;
-            image.src =
-                "https://placehold.co/400x250?text=CampusLend";
-        };
-
-        // Resource information
-        const details = document.createElement("div");
-        details.className = "resource-info";
-
-        const name = document.createElement("h3");
-        name.textContent = resource.name || "Unnamed Resource";
-
-        const category = document.createElement("p");
-        category.textContent =
-            "Category: " + (resource.category || "Other");
-
-        const condition = document.createElement("p");
-        condition.textContent =
-            "Condition: " + (resource.condition || "Not specified");
-
-        const location = document.createElement("p");
-        location.textContent =
-            "Pickup: " + (resource.location || "Not specified");
-
-        const availability = document.createElement("p");
-        availability.textContent =
-            "Availability: " + (resource.availability || "Not specified");
-
-        const fee = document.createElement("p");
-        fee.textContent =
-            "Fee: " + (resource.fee || "0");
-
-        const description = document.createElement("p");
-        description.textContent = resource.description || "";
-
-        const viewDetails = document.createElement("p");
-        viewDetails.className = "view-details-text";
-        viewDetails.textContent = "View Details →";
-
-        details.append(
-            name,
-            category,
-            condition,
-            location,
-            availability,
-            fee,
-            description,
-            viewDetails
-        );
-
-        card.append(image, details);
-        resourceContainer.appendChild(card);
-    });
+function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    })[character]);
 }
 
+function formatFee(fee) {
+    const amount = Number(fee ?? 0);
 
-/* ==================================
-   OPEN RESOURCE DETAILS
-   ================================== */
-
-function openResourceDetails(card) {
-    if (!card || card.hidden) {
-        return;
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return "Free";
     }
 
-    // Saved resources use their stored IDs.
-    const savedResourceId = card.dataset.resourceId;
-
-    if (savedResourceId) {
-        window.location.href =
-            "item-details.html?item=" +
-            encodeURIComponent(savedResourceId);
-
-        return;
-    }
-
-    // If a sample card already has a details link,
-    // allow its existing link to work normally.
-    const existingLink = card.matches("a[href]")
-        ? card
-        : card.querySelector('a[href*="item-details.html"]');
-
-    if (existingLink) {
-        window.location.href = existingLink.href;
-        return;
-    }
-
-    // For sample cards without a link, use an existing item ID.
-    const sampleId =
-        card.dataset.resourceId ||
-        card.dataset.itemId ||
-        card.dataset.id;
-
-    if (sampleId) {
-        window.location.href =
-            "item-details.html?item=" +
-            encodeURIComponent(sampleId);
-    } else {
-        console.warn(
-            "This sample card needs a resource ID or an existing details link."
-        );
-    }
+    return `Rs. ${amount.toLocaleString("en-LK")}`;
 }
 
+function getCategoryIcon(category) {
+    const icons = {
+        Books: "📚",
+        Electronics: "💻",
+        Photography: "📷",
+        Sports: "⚽",
+        Tools: "🛠️",
+        Stationery: "📝",
+        Other: "🎒"
+    };
 
-// Handle clicks on saved cards and sample cards.
-if (resourceContainer) {
-    resourceContainer.addEventListener("click", function (event) {
-        if (event.target.closest("a, button, input, select, textarea")) {
-            return;
-        }
+    return icons[category] || "📦";
+}
 
-        const card = event.target.closest(".resource-card");
+function createResourceCard(resource) {
+    const card = document.createElement("article");
+    card.className = "resource-card";
 
-        if (card) {
-            openResourceDetails(card);
-        }
+    const name = escapeHTML(resource.name || "Untitled Resource");
+    const category = escapeHTML(resource.category || "Other");
+    const condition = escapeHTML(resource.condition || "Not specified");
+    const location = escapeHTML(resource.location || "Location not specified");
+    const owner = escapeHTML(resource.ownerName || "Campus Member");
+    const description = escapeHTML(resource.description || "No description available.");
+
+    card.innerHTML = `
+        <div class="resource-image">
+            <span class="resource-icon">
+                ${getCategoryIcon(resource.category)}
+            </span>
+            <span class="resource-badge">Available</span>
+        </div>
+
+        <div class="resource-content">
+            <span class="resource-category">${category}</span>
+
+            <h3>${name}</h3>
+
+            <p class="resource-description">${description}</p>
+
+            <div class="resource-meta">
+                <span>Condition: ${condition}</span>
+                <span>📍 ${location}</span>
+            </div>
+
+            <div class="resource-owner">
+                Shared by ${owner}
+            </div>
+
+            <div class="resource-card-bottom">
+                <strong>${formatFee(resource.fee)}</strong>
+
+                <a href="item-details.html?item=${encodeURIComponent(resource.id)}"
+                   class="primary-btn">
+                    View Details
+                </a>
+            </div>
+        </div>
+    `;
+
+    return card;
+}
+
+function renderResources(resources) {
+    resourceGrid.innerHTML = "";
+
+    resultCount.textContent =
+        `${resources.length} resource${resources.length === 1 ? "" : "s"} found`;
+
+    if (resources.length === 0) {
+        noResults.hidden = false;
+        return;
+    }
+
+    noResults.hidden = true;
+
+    const fragment = document.createDocumentFragment();
+
+    resources.forEach(resource => {
+        fragment.appendChild(createResourceCard(resource));
     });
 
-    // Allow keyboard users to open cards with Enter or Space.
-    resourceContainer.addEventListener("keydown", function (event) {
-        const card = event.target.closest(".saved-resource-card");
-
-        if (!card || (event.key !== "Enter" && event.key !== " ")) {
-            return;
-        }
-
-        event.preventDefault();
-        openResourceDetails(card);
-    });
+    resourceGrid.appendChild(fragment);
 }
 
+function applyFilters() {
+    const searchTerm = searchInput.value.trim().toLowerCase();
 
-/* ==================================
-   SEARCH AND CATEGORY FILTERS
-   ================================== */
-
-function filterResources() {
-    const searchTerm = searchInput
-        ? searchInput.value.trim().toLowerCase()
-        : "";
-
-    const allResourceCards =
-        document.querySelectorAll(".resource-card");
-
-    let visibleCount = 0;
-
-    allResourceCards.forEach(function (card) {
-        const resourceName =
-            (card.dataset.name || "").toLowerCase();
-
-        const resourceCategory =
-            (card.dataset.category || "").toLowerCase().trim();
-
-        const cardText = card.textContent.toLowerCase();
-
-        const matchesSearch =
-            resourceName.includes(searchTerm) ||
-            cardText.includes(searchTerm);
-
+    const filteredResources = allResources.filter(resource => {
         const matchesCategory =
             selectedCategory === "all" ||
-            resourceCategory === selectedCategory.toLowerCase();
+            String(resource.category || "").toLowerCase() ===
+            selectedCategory.toLowerCase();
 
-        const shouldDisplay = matchesSearch && matchesCategory;
+        const searchableText = [
+            resource.name,
+            resource.category,
+            resource.description,
+            resource.location,
+            resource.ownerName,
+            resource.condition
+        ].join(" ").toLowerCase();
 
-        card.hidden = !shouldDisplay;
+        const matchesSearch = searchableText.includes(searchTerm);
 
-        if (shouldDisplay) {
-            visibleCount++;
-        }
+        return matchesCategory && matchesSearch;
     });
 
-    if (resourceCount) {
-        resourceCount.textContent = visibleCount;
-    }
+    renderResources(filteredResources);
+}
 
-    if (noResults) {
-        noResults.hidden = visibleCount !== 0;
+async function loadResources() {
+    resourceGrid.innerHTML =
+        '<div class="loading-message">Loading available resources...</div>';
+
+    noResults.hidden = true;
+    resultCount.textContent = "Loading resources...";
+
+    try {
+        const itemsQuery = query(
+            collection(db, "items"),
+            where("available", "==", true)
+        );
+
+        const snapshot = await getDocs(itemsQuery);
+
+        allResources = snapshot.docs.map(document => ({
+            id: document.id,
+            ...document.data()
+        }));
+
+        allResources.sort((a, b) => {
+            const dateA = a.createdAt?.toMillis?.() || 0;
+            const dateB = b.createdAt?.toMillis?.() || 0;
+
+            return dateB - dateA;
+        });
+
+        applyFilters();
+
+        if (allResources.length === 0) {
+            showMessage("No available resources have been listed yet.");
+        } else {
+            showMessage("");
+        }
+
+    } catch (error) {
+        console.error("Error loading resources:", error);
+
+        resourceGrid.innerHTML = "";
+        resultCount.textContent = "Unable to load resources.";
+
+        showMessage(
+            "Could not load resources. Please check your connection and try again.",
+            "error"
+        );
     }
 }
 
+searchInput.addEventListener("input", applyFilters);
 
-/* ==================================
-   CATEGORY BUTTONS
-   ================================== */
+searchButton.addEventListener("click", applyFilters);
 
-categoryButtons.forEach(function (button) {
-    button.addEventListener("click", function () {
-        selectedCategory = button.dataset.category || "all";
+categoryFilters.addEventListener("click", event => {
+    const button = event.target.closest("[data-category]");
 
-        categoryButtons.forEach(function (categoryButton) {
-            const isActive = categoryButton === button;
+    if (!button) return;
 
-            categoryButton.classList.toggle("active", isActive);
+    selectedCategory = button.dataset.category;
 
-            categoryButton.setAttribute(
-                "aria-pressed",
-                String(isActive)
-            );
-        });
-
-        filterResources();
+    categoryFilters.querySelectorAll("[data-category]").forEach(item => {
+        item.classList.toggle("active", item === button);
     });
+
+    applyFilters();
 });
 
+resetSearch.addEventListener("click", () => {
+    searchInput.value = "";
+    selectedCategory = "all";
 
-/* ==================================
-   SEARCH EVENTS
-   ================================== */
-
-if (searchInput) {
-    searchInput.addEventListener("input", filterResources);
-
-    searchInput.addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            event.preventDefault();
-            filterResources();
-        }
+    categoryFilters.querySelectorAll("[data-category]").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.category === "all"
+        );
     });
-}
 
-if (searchButton) {
-    searchButton.addEventListener("click", filterResources);
-}
+    applyFilters();
+});
 
-
-/* ==================================
-   RESET FILTERS
-   ================================== */
-
-if (resetSearchButton) {
-    resetSearchButton.addEventListener("click", function () {
-        if (searchInput) {
-            searchInput.value = "";
-        }
-
-        selectedCategory = "all";
-
-        categoryButtons.forEach(function (button) {
-            const isActive = button.dataset.category === "all";
-
-            button.classList.toggle("active", isActive);
-
-            button.setAttribute(
-                "aria-pressed",
-                String(isActive)
-            );
-        });
-
-        filterResources();
-    });
-}
-
-
-/* ==================================
-   INITIALIZE PAGE
-   ================================== */
-
-displaySavedResources();
-filterResources();
+loadResources();
