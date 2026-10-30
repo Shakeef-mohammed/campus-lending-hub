@@ -1,5 +1,5 @@
 
-import { db } from "../firebase-config.js";
+import { db } from "./firebase-config.js";
 
 import {
   collection,
@@ -42,10 +42,6 @@ function escapeHTML(value = "") {
     '"': "&quot;",
     "'": "&#039;"
   })[character]);
-}
-
-function getCategoryIcon(category) {
-  return categoryIcons[category] || "📦";
 }
 
 function formatFee(fee) {
@@ -91,18 +87,19 @@ function renderResources(resources) {
       `${resources.length} item${resources.length === 1 ? "" : "s"} found`;
   }
 
-  if (resources.length === 0) {
-    if (noResults) noResults.style.display = "block";
-    return;
+  const hasNoResults = resources.length === 0;
+
+  if (noResults) {
+    noResults.hidden = !hasNoResults;
   }
 
-  if (noResults) noResults.style.display = "none";
+  if (hasNoResults) return;
 
   resources.forEach(resource => {
     const card = document.createElement("article");
     card.className = "resource-card";
 
-    const icon = getCategoryIcon(resource.category);
+    const icon = categoryIcons[resource.category] || "📦";
 
     card.innerHTML = `
       <div class="resource-image">
@@ -116,22 +113,15 @@ function renderResources(resources) {
 
         <h3>${escapeHTML(resource.name || "Untitled item")}</h3>
 
-        <p>${escapeHTML(
-          resource.description || "No description available."
-        )}</p>
+        <p>${escapeHTML(resource.description || "No description available.")}</p>
 
         <div class="resource-details">
-          <span>📍 ${escapeHTML(
-            resource.location || "Location not specified"
-          )}</span>
-
+          <span>📍 ${escapeHTML(resource.location || "Location not specified")}</span>
           <span>💰 ${formatFee(resource.fee)}</span>
         </div>
 
         <p class="resource-owner">
-          Owner: ${escapeHTML(
-            resource.ownerName || "CampusLend member"
-          )}
+          Owner: ${escapeHTML(resource.ownerName || "CampusLend member")}
         </p>
 
         <a
@@ -148,9 +138,11 @@ function renderResources(resources) {
 }
 
 function applyFilters() {
-  const term = (searchInput?.value || searchTerm)
+  const term = (searchInput?.value ?? searchTerm)
     .trim()
     .toLowerCase();
+
+  searchTerm = term;
 
   const filtered = allResources.filter(resource => {
     const matchesCategory =
@@ -166,9 +158,7 @@ function applyFilters() {
       resource.ownerName
     ].join(" ").toLowerCase();
 
-    const matchesSearch = searchableText.includes(term);
-
-    return matchesCategory && matchesSearch;
+    return matchesCategory && searchableText.includes(term);
   });
 
   renderResources(filtered);
@@ -212,6 +202,12 @@ async function loadResources() {
 
     resourceGrid.innerHTML = "";
 
+    if (resultCount) {
+      resultCount.textContent = "Unable to load resources";
+    }
+
+    if (noResults) noResults.hidden = true;
+
     showBrowseMessage(
       "Unable to load items. Please refresh the page and try again."
     );
@@ -222,10 +218,13 @@ function resetFilters() {
   selectedCategory = "all";
   searchTerm = "";
 
-  if (searchInput) searchInput.value = "";
+  if (searchInput) {
+    searchInput.value = "";
+  }
 
   const newUrl = new URL(window.location.href);
   newUrl.search = "";
+
   window.history.replaceState({}, "", newUrl);
 
   applyFilters();
@@ -250,6 +249,7 @@ searchInput?.addEventListener("input", () => {
 
 searchInput?.addEventListener("keydown", event => {
   if (event.key === "Enter") {
+    event.preventDefault();
     searchTerm = searchInput.value.trim();
     applyFilters();
   }
