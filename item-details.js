@@ -1,5 +1,5 @@
 
-import { auth, db } from "../firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 import {
   onAuthStateChanged
@@ -13,9 +13,11 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
+// URL-ல் இருந்து item ID பெறுதல்
 const params = new URLSearchParams(window.location.search);
 const itemId = params.get("item");
 
+// HTML elements
 const detailsMessage = document.getElementById("detailsMessage");
 const detailsSection = document.getElementById("item-details");
 
@@ -32,6 +34,22 @@ let currentItem = null;
 let itemLoaded = false;
 let requestSubmitted = false;
 
+// Category emoji
+function getCategoryIcon(category) {
+  const icons = {
+    Books: "📚",
+    Electronics: "💻",
+    Photography: "📷",
+    Sports: "⚽",
+    Tools: "🛠️",
+    Stationery: "✏️",
+    Other: "📦"
+  };
+
+  return icons[category] || "📦";
+}
+
+// Message display
 function showMessage(element, message, type = "info") {
   if (!element) return;
 
@@ -49,6 +67,7 @@ function setBorrowButtonState(disabled, text) {
   }
 }
 
+// Fee formatting
 function formatFee(fee) {
   const amount = Number(fee || 0);
 
@@ -57,6 +76,7 @@ function formatFee(fee) {
     : `Rs. ${amount.toLocaleString("en-LK")}`;
 }
 
+// Display item details
 function displayItem(item) {
   if (!detailsSection) return;
 
@@ -70,7 +90,7 @@ function displayItem(item) {
     itemDuration: item.maxDuration
       ? `${item.maxDuration} days`
       : "Not specified",
-    ownerName: item.ownerName || "CampusShare member"
+    ownerName: item.ownerName || "CampusLend member"
   };
 
   Object.entries(fields).forEach(([id, value]) => {
@@ -81,13 +101,27 @@ function displayItem(item) {
     }
   });
 
+  // Category icon
+  const itemIcon = document.getElementById("itemIcon");
+
+  if (itemIcon) {
+    itemIcon.textContent = getCategoryIcon(item.category);
+  }
+
+  // Availability
   const availability = document.getElementById("itemAvailability");
 
   if (availability) {
-    availability.textContent =
-      item.available === true && !item.activeRequestId
-        ? "Available"
-        : "Currently unavailable";
+    const isAvailable =
+      item.available === true && !item.activeRequestId;
+
+    availability.textContent = isAvailable
+      ? "Available"
+      : "Currently unavailable";
+
+    availability.className = isAvailable
+      ? "availability-badge available"
+      : "availability-badge unavailable";
   }
 
   detailsSection.hidden = false;
@@ -97,6 +131,7 @@ function displayItem(item) {
   }
 }
 
+// Update borrow button
 function updateAvailability() {
   if (!currentItem || !itemLoaded) return;
 
@@ -124,9 +159,10 @@ function updateAvailability() {
     return;
   }
 
-  setBorrowButtonState(false, "Request to Borrow");
+  setBorrowButtonState(false, "Send Borrow Request");
 }
 
+// Load item
 async function loadItem() {
   if (!itemId || !currentItemRef) {
     showMessage(detailsMessage, "Invalid item link.", "error");
@@ -166,10 +202,12 @@ async function loadItem() {
   }
 }
 
+// Get date input
 function getDateValue(id) {
   return document.getElementById(id)?.value || "";
 }
 
+// Date validation
 function validateDates(startDate, endDate) {
   if (!startDate || !endDate) {
     throw new Error("Please select both start and end dates.");
@@ -177,8 +215,8 @@ function validateDates(startDate, endDate) {
 
   const start = new Date(`${startDate}T00:00:00`);
   const end = new Date(`${endDate}T00:00:00`);
-  const today = new Date();
 
+  const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   if (
@@ -193,7 +231,7 @@ function validateDates(startDate, endDate) {
   }
 
   if (end <= start) {
-    throw new Error("End date must be after the start date.");
+    throw new Error("Return date must be after the start date.");
   }
 
   const duration = Math.ceil(
@@ -212,6 +250,7 @@ function validateDates(startDate, endDate) {
   return { startDate, endDate };
 }
 
+// Submit borrow request
 async function submitBorrowRequest(event) {
   event.preventDefault();
 
@@ -228,6 +267,8 @@ async function submitBorrowRequest(event) {
 
   if (requestSubmitted) return;
 
+  setBorrowButtonState(true, "Checking...");
+
   try {
     await currentUser.reload();
     currentUser = auth.currentUser;
@@ -238,6 +279,8 @@ async function submitBorrowRequest(event) {
         "Please verify your email before requesting an item.",
         "error"
       );
+
+      updateAvailability();
       return;
     }
 
@@ -284,7 +327,7 @@ async function submitBorrowRequest(event) {
         borrowerName:
           currentUser.displayName ||
           currentUser.email ||
-          "CampusShare member",
+          "CampusLend member",
         status: "pending",
         startDate,
         endDate,
@@ -312,6 +355,8 @@ async function submitBorrowRequest(event) {
       "success"
     );
 
+    displayItem(currentItem);
+
   } catch (error) {
     console.error("Borrow request failed:", error);
 
@@ -330,8 +375,10 @@ async function submitBorrowRequest(event) {
   }
 }
 
+// Form event
 borrowForm?.addEventListener("submit", submitBorrowRequest);
 
+// Login state
 onAuthStateChanged(auth, async user => {
   currentUser = user;
 
@@ -347,4 +394,5 @@ onAuthStateChanged(auth, async user => {
   updateAvailability();
 });
 
+// Load page
 loadItem();
