@@ -9,34 +9,37 @@ import {
 import {
   collection,
   getDocs,
-  doc,
-  getDoc,
   query,
-  where,
-  runTransaction,
-  serverTimestamp
+  where
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-const itemsGrid = document.getElementById("itemsGrid");
-const emptyMessage = document.getElementById("emptyMessage");
-const searchInput = document.getElementById("itemSearch");
-const categoryFilter = document.getElementById("categoryFilter");
+const ADMIN_UID = "40bJuS4yXgMmI9Giq38R4PUPWhD3";
 
-let currentUser = null;
+const itemsGrid = document.getElementById("homeItemsGrid");
+const loadingMessage = document.getElementById("homeItemsMessage");
+const emptyMessage = document.getElementById("homeEmptyMessage");
+const searchForm = document.getElementById("homeSearchForm");
+const searchInput = document.getElementById("homeSearch");
+
+const menuToggle = document.getElementById("menuToggle");
+const navLinks = document.getElementById("navLinks");
+
+const dashboardLink = document.getElementById("dashboardNavLink");
+const loginLink = document.getElementById("loginNavLink");
+const registerLink = document.getElementById("registerNavLink");
+const adminLink = document.getElementById("adminNavLink");
+const logoutButton = document.getElementById("navLogoutButton");
+
 let allItems = [];
+let currentUser = null;
 
 const categoryIcons = {
   Books: "📚",
-  Textbooks: "📚",
   Electronics: "💻",
-  Calculators: "🧮",
   Photography: "📷",
-  Cameras: "📷",
   Sports: "⚽",
-  "Sports Equipment": "⚽",
   Tools: "🛠️",
   Stationery: "✏️",
-  Accessories: "🎒",
   Other: "📦"
 };
 
@@ -50,24 +53,12 @@ function escapeHTML(value = "") {
   })[character]);
 }
 
-function getCategoryIcon(category) {
-  return categoryIcons[category] || "📦";
-}
-
 function showMessage(message, type = "info") {
-  let element = document.getElementById("homeMessage");
+  if (!loadingMessage) return;
 
-  if (!element) {
-    element = document.createElement("div");
-    element.id = "homeMessage";
-
-    if (itemsGrid?.parentElement) {
-      itemsGrid.parentElement.prepend(element);
-    }
-  }
-
-  element.textContent = message;
-  element.className = `home-message ${type}`;
+  loadingMessage.textContent = message;
+  loadingMessage.className = `home-message ${type}`;
+  loadingMessage.hidden = false;
 }
 
 function formatFee(fee) {
@@ -84,21 +75,19 @@ function renderItems(items) {
   itemsGrid.innerHTML = "";
 
   if (items.length === 0) {
-    if (emptyMessage) {
-      emptyMessage.style.display = "block";
-    }
+    if (emptyMessage) emptyMessage.hidden = false;
+    if (loadingMessage) loadingMessage.hidden = true;
     return;
   }
 
-  if (emptyMessage) {
-    emptyMessage.style.display = "none";
-  }
+  if (emptyMessage) emptyMessage.hidden = true;
+  if (loadingMessage) loadingMessage.hidden = true;
 
-  items.forEach(item => {
+  items.slice(0, 8).forEach(item => {
     const card = document.createElement("article");
     card.className = "item-card";
 
-    const icon = getCategoryIcon(item.category);
+    const icon = categoryIcons[item.category] || "📦";
 
     card.innerHTML = `
       <div class="item-image">
@@ -120,16 +109,13 @@ function renderItems(items) {
         </div>
 
         <p class="item-owner">
-          Owner: ${escapeHTML(item.ownerName || "CampusShare member")}
+          Owner: ${escapeHTML(item.ownerName || "CampusLend member")}
         </p>
 
-        <button
-          class="borrow-btn"
-          data-item-id="${escapeHTML(item.id)}"
-          type="button"
-        >
-          Request to Borrow
-        </button>
+        <a class="borrow-btn"
+           href="item-details.html?item=${encodeURIComponent(item.id)}">
+          View Details
+        </a>
       </div>
     `;
 
@@ -137,29 +123,19 @@ function renderItems(items) {
   });
 }
 
-function applyFilters() {
-  const searchTerm = (searchInput?.value || "")
-    .trim()
-    .toLowerCase();
-
-  const selectedCategory = categoryFilter?.value || "all";
+function applySearch() {
+  const term = (searchInput?.value || "").trim().toLowerCase();
 
   const filteredItems = allItems.filter(item => {
-    const matchesSearch = [
+    return [
       item.name,
       item.description,
       item.category,
       item.location,
       item.ownerName
     ].some(value =>
-      String(value || "").toLowerCase().includes(searchTerm)
+      String(value || "").toLowerCase().includes(term)
     );
-
-    const matchesCategory =
-      selectedCategory === "all" ||
-      item.category?.toLowerCase() === selectedCategory.toLowerCase();
-
-    return matchesSearch && matchesCategory;
   });
 
   renderItems(filteredItems);
@@ -168,7 +144,7 @@ function applyFilters() {
 async function loadItems() {
   if (!itemsGrid) return;
 
-  itemsGrid.innerHTML = "<p>Loading available items...</p>";
+  showMessage("Loading available resources...");
 
   try {
     const itemsQuery = query(
@@ -179,9 +155,9 @@ async function loadItems() {
     const snapshot = await getDocs(itemsQuery);
 
     allItems = snapshot.docs
-      .map(itemDoc => ({
-        id: itemDoc.id,
-        ...itemDoc.data()
+      .map(document => ({
+        id: document.id,
+        ...document.data()
       }))
       .filter(item => !item.activeRequestId)
       .sort((a, b) => {
@@ -190,158 +166,83 @@ async function loadItems() {
         return dateB - dateA;
       });
 
-    applyFilters();
+    applySearch();
 
   } catch (error) {
-    console.error("Loading items failed:", error);
-
-    itemsGrid.innerHTML =
-      "<p>Unable to load items. Please refresh the page.</p>";
+    console.error("Loading resources failed:", error);
+    showMessage("Unable to load resources. Please refresh the page.", "error");
   }
 }
 
-async function createBorrowRequest(itemId, button) {
-  if (!currentUser) {
-    showMessage("Please sign in before requesting an item.", "error");
-    window.location.href = "login.html";
-    return;
-  }
+function updateNavigation(user, isAdmin = false) {
+  if (dashboardLink) dashboardLink.hidden = !user;
+  if (loginLink) loginLink.hidden = !!user;
+  if (registerLink) registerLink.hidden = !!user;
+  if (logoutButton) logoutButton.hidden = !user;
 
-  try {
-    await currentUser.reload();
-    currentUser = auth.currentUser;
-
-    if (!currentUser?.emailVerified) {
-      showMessage(
-        "Please verify your email before requesting an item.",
-        "error"
-      );
-
-      await signOut(auth);
-      window.location.href = "login.html";
-      return;
-    }
-
-    button.disabled = true;
-    button.textContent = "Sending request...";
-
-    const itemRef = doc(db, "items", itemId);
-    const requestRef = doc(collection(db, "borrowRequests"));
-
-    await runTransaction(db, async transaction => {
-      const itemSnapshot = await transaction.get(itemRef);
-
-      if (!itemSnapshot.exists()) {
-        throw new Error("This item no longer exists.");
-      }
-
-      const item = itemSnapshot.data();
-
-      if (item.ownerId === currentUser.uid) {
-        throw new Error("You cannot borrow your own item.");
-      }
-
-      if (item.available !== true || item.activeRequestId) {
-        throw new Error("This item is no longer available.");
-      }
-
-      transaction.set(requestRef, {
-        itemId,
-        itemName: item.name || "",
-        ownerId: item.ownerId,
-        ownerName: item.ownerName || "",
-        borrowerId: currentUser.uid,
-        borrowerName:
-          currentUser.displayName ||
-          currentUser.email ||
-          "CampusShare member",
-        status: "pending",
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-
-      transaction.update(itemRef, {
-        available: false,
-        activeRequestId: requestRef.id,
-        updatedAt: serverTimestamp()
-      });
-    });
-
-    showMessage(
-      "Your borrow request has been sent successfully!",
-      "success"
-    );
-
-    await loadItems();
-
-  } catch (error) {
-    console.error("Borrow request failed:", error);
-
-    showMessage(
-      error.message || "Unable to send your request.",
-      "error"
-    );
-
-  } finally {
-    if (button.isConnected) {
-      button.disabled = false;
-      button.textContent = "Request to Borrow";
-    }
+  if (adminLink) {
+    adminLink.hidden = !(user && isAdmin);
   }
 }
-
-itemsGrid?.addEventListener("click", event => {
-  const button = event.target.closest(".borrow-btn");
-
-  if (!button) return;
-
-  const itemId = button.dataset.itemId;
-
-  if (!itemId) return;
-
-  createBorrowRequest(itemId, button);
-});
-
-searchInput?.addEventListener("input", applyFilters);
-categoryFilter?.addEventListener("change", applyFilters);
-
-window.searchItems = function () {
-  applyFilters();
-
-  document.getElementById("items")?.scrollIntoView({
-    behavior: "smooth"
-  });
-};
-
-window.filterCategory = function (category) {
-  if (categoryFilter) {
-    const matchingOption = [...categoryFilter.options].find(option =>
-      option.value.toLowerCase() === category.toLowerCase() ||
-      option.textContent.toLowerCase() === category.toLowerCase()
-    );
-
-    categoryFilter.value = matchingOption?.value || category;
-  }
-
-  applyFilters();
-
-  document.getElementById("items")?.scrollIntoView({
-    behavior: "smooth"
-  });
-};
 
 onAuthStateChanged(auth, async user => {
   currentUser = user;
+  let isAdmin = false;
 
   if (user) {
     try {
       await user.reload();
       currentUser = auth.currentUser;
+
+      if (!currentUser?.emailVerified) {
+        await signOut(auth);
+        currentUser = null;
+      } else {
+        const token = await currentUser.getIdTokenResult(true);
+
+        isAdmin =
+          currentUser.uid === ADMIN_UID &&
+          token.claims.admin === true;
+      }
     } catch (error) {
-      console.error("User reload failed:", error);
+      console.error("Authentication check failed:", error);
     }
   }
 
-  await loadItems();
+  updateNavigation(currentUser, isAdmin);
 });
 
+searchForm?.addEventListener("submit", event => {
+  event.preventDefault();
+
+  const term = searchInput?.value.trim() || "";
+
+  window.location.href = term
+    ? `browse.html?search=${encodeURIComponent(term)}`
+    : "browse.html";
+});
+
+menuToggle?.addEventListener("click", () => {
+  const isOpen = navLinks?.classList.toggle("open") || false;
+
+  menuToggle.setAttribute("aria-expanded", String(isOpen));
+});
+
+navLinks?.addEventListener("click", event => {
+  if (event.target.closest("a")) {
+    navLinks.classList.remove("open");
+    menuToggle?.setAttribute("aria-expanded", "false");
+  }
+});
+
+logoutButton?.addEventListener("click", async () => {
+  try {
+    await signOut(auth);
+    window.location.reload();
+  } catch (error) {
+    console.error("Logout failed:", error);
+    alert("Unable to log out. Please try again.");
+  }
+});
+
+loadItems();
