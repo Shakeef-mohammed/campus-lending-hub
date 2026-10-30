@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,8 +7,10 @@
     <title>CampusShare | Dashboard</title>
     <link rel="stylesheet" href="dashboard.css">
 </head>
+
 <body>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
         <h2>Campus<span>Share</span></h2>
 
@@ -15,6 +18,7 @@
 
         <a class="active" href="dashboard.html">Dashboard</a>
         <a href="index.html#items">Browse Items</a>
+        <a href="#receivedRequests">Borrow Requests</a>
         <a href="#requests">My Requests</a>
         <a href="#borrowings">My Borrowings</a>
         <a href="#history">History</a>
@@ -22,7 +26,11 @@
         <a href="index.html" class="back-home">Back to Home</a>
     </aside>
 
+
+    <!-- Main Dashboard -->
     <main class="dashboard-main">
+
+        <!-- Topbar -->
         <header class="topbar">
             <div>
                 <h2>Student Dashboard</h2>
@@ -35,72 +43,127 @@
             </div>
         </header>
 
+
+        <!-- Welcome Section -->
         <section class="welcome">
-            <h1>Welcome back, <span id="welcomeName">Student</span>!</h1>
+            <h1>
+                Welcome back,
+                <span id="welcomeName">Student</span>!
+            </h1>
+
             <p>Here is an overview of your campus resources.</p>
         </section>
 
-        
-<section class="dashboard-panel" id="addItemPanel">
-    <h2>List an Item</h2>
-    <p style="margin-bottom: 18px; color: #64748b;">
-        Share an item with other campus students.
-    </p>
 
-    <form id="addItemForm">
-        <label for="itemName">Item Name</label>
-        <input id="itemName" type="text"
-               maxlength="80" required
-               placeholder="e.g. Scientific Calculator">
+        <!-- Add Item Section -->
+        <section class="dashboard-panel" id="addItemPanel">
 
-        <label for="itemCategory">Category</label>
-        <select id="itemCategory" required>
-            <option value="">Choose a category</option>
-            <option value="Textbooks">Textbooks</option>
-            <option value="Calculators">Calculators</option>
-            <option value="Laptops">Laptops</option>
-            <option value="Cameras">Cameras</option>
-            <option value="Sports Equipment">Sports Equipment</option>
-            <option value="Accessories">Accessories</option>
-            <option value="Other">Other</option>
-        </select>
+            <h2>List an Item</h2>
 
-        <label for="itemDescription">Description</label>
-        <textarea id="itemDescription" maxlength="500"
-                  rows="3" required
-                  placeholder="Describe the item and its condition"></textarea>
+            <p style="margin-bottom: 18px; color: #64748b;">
+                Share an item with other campus students.
+            </p>
 
-        <label for="itemLocation">Pickup Location</label>
-        <input id="itemLocation" type="text"
-               maxlength="120" required
-               placeholder="e.g. University library">
+            <form id="addItemForm">
 
-        <button id="addItemButton" type="submit">
-            Add Item
-            
-<section class="requests-section">
-  <h2>Borrow Requests Received</h2>
-  <p>Students requesting your items will appear here.</p>
-  <div id="requestsList">
-    Loading requests...
-  </div>
-</section>
+                <label for="itemName">Item Name</label>
 
-        </button>
+                <input
+                    id="itemName"
+                    type="text"
+                    maxlength="80"
+                    required
+                    placeholder="e.g. Scientific Calculator"
+                >
 
-        <p id="itemFormMessage" role="status"
-           style="margin-top: 12px;"></p>
-    </form>
-</section>
 
-<section class="dashboard-panel">
-    <h2>Campus Items</h2>
-    <div id="itemsList">
-        <p>Loading items...</p>
-    </div>
-</section>
+                <label for="itemCategory">Category</label>
 
+                <select id="itemCategory" required>
+
+                    <option value="">Choose a category</option>
+                    <option value="Textbooks">Textbooks</option>
+                    <option value="Calculators">Calculators</option>
+                    <option value="Laptops">Laptops</option>
+                    <option value="Cameras">Cameras</option>
+                    <option value="Sports Equipment">Sports Equipment</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Other">Other</option>
+
+                </select>
+
+
+                <label for="itemDescription">Description</label>
+
+                <textarea
+                    id="itemDescription"
+                    maxlength="500"
+                    rows="3"
+                    required
+                    placeholder="Describe the item and its condition"
+                ></textarea>
+
+
+                <label for="itemLocation">Pickup Location</label>
+
+                <input
+                    id="itemLocation"
+                    type="text"
+                    maxlength="120"
+                    required
+                    placeholder="e.g. University library"
+                >
+
+
+                <button id="addItemButton" type="submit">
+                    Add Item
+                </button>
+
+                <p
+                    id="itemFormMessage"
+                    role="status"
+                    style="margin-top: 12px;"
+                ></p>
+
+            </form>
+
+        </section>
+
+
+        <!-- Borrow Requests Received -->
+        <section
+            class="dashboard-panel requests-section"
+            id="receivedRequests"
+        >
+
+            <h2>Borrow Requests Received</h2>
+
+            <p style="margin-bottom: 18px; color: #64748b;">
+                Students requesting your items will appear here.
+            </p>
+
+            <div id="requestsList">
+                Loading requests...
+            </div>
+
+        </section>
+
+
+        <!-- Campus Items -->
+        <section class="dashboard-panel" id="items">
+
+            <h2>Campus Items</h2>
+
+            <div id="itemsList">
+                <p>Loading items...</p>
+            </div>
+
+        </section>
+
+
+        <!-- Statistics -->
         <section class="stats-grid">
+
             <article class="stat-card">
                 <p>Total Listed Items</p>
                 <h2>8</h2>
@@ -120,13 +183,19 @@
                 <p>Items Returned</p>
                 <h2>4</h2>
             </article>
+
         </section>
 
+
+        <!-- Recent Borrowing Requests -->
         <section class="dashboard-panel" id="requests">
+
             <h2>Recent Borrowing Requests</h2>
 
             <div class="table-container">
+
                 <table>
+
                     <thead>
                         <tr>
                             <th>Item</th>
@@ -137,6 +206,7 @@
                     </thead>
 
                     <tbody>
+
                         <tr>
                             <td>Scientific Calculator</td>
                             <td>Student A</td>
@@ -157,26 +227,47 @@
                             <td>October 24, 2026</td>
                             <td><span class="returned">Returned</span></td>
                         </tr>
+
                     </tbody>
+
                 </table>
+
             </div>
+
         </section>
 
+
+        <!-- Quick Actions -->
         <section class="dashboard-panel" id="history">
+
             <h2>Quick Actions</h2>
 
             <div class="quick-actions">
-                <a href="index.html#items">Browse Campus Resources</a>
-                <a href="index.html">Return to Home Page</a>
+
+                <a href="index.html#items">
+                    Browse Campus Resources
+                </a>
+
+                <a href="index.html">
+                    Return to Home Page
+                </a>
+
             </div>
+
         </section>
 
+
+        <!-- Footer Note -->
         <p class="demo-note">
-            This dashboard uses sample data. A backend and database are
-            required for real borrowing records and account information.
+            This dashboard uses sample data for some sections.
+            Real borrowing records are loaded from Firebase.
         </p>
+
     </main>
 
+
+    <!-- Firebase Dashboard JavaScript -->
     <script type="module" src="dashboard.js"></script>
+
 </body>
 </html>
