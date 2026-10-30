@@ -702,3 +702,10 @@ a {
         font-size: 26px;
     }
 }
+body {
+    background: red !important;
+}
+
+.hero h1 {
+    color: blue !important;
+}
