@@ -562,3 +562,11 @@ th {
         width: 100%;
     }
 }
+
+.chat-btn {
+    background: #087f64;
+}
+
+.chat-btn:hover {
+    background: #066b54;
+}
