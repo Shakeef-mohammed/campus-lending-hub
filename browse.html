@@ -7,8 +7,8 @@
     <meta name="description" content="Browse and borrow useful resources from your university community.">
     <title>Browse Resources | CampusLend</title>
 
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/browse.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="browse.css">
 </head>
 
 <body>
@@ -22,6 +22,7 @@
             <nav class="nav-links">
                 <a href="index.html">Home</a>
                 <a href="browse.html" class="active">Browse Items</a>
+                <a href="add-resource.html">Add Resource</a>
                 <a href="dashboard.html">Dashboard</a>
                 <a href="login.html">Login</a>
                 <a href="register.html" class="primary-btn">Join Now</a>
@@ -34,7 +35,8 @@
             <div class="container">
                 <p class="eyebrow">CAMPUS COMMUNITY SHARING</p>
 
-                <h1>Find What You Need.<br>
+                <h1>
+                    Find What You Need.<br>
                     <span>Share What You Have.</span>
                 </h1>
 
@@ -74,29 +76,14 @@
                 </div>
 
                 <div class="category-filters" id="categoryFilters">
-                    <button type="button" class="category-btn active"
-                        data-category="all">All Items</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Books">Books</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Electronics">Electronics</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Photography">Photography</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Sports">Sports</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Tools">Tools</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Stationery">Stationery</button>
-
-                    <button type="button" class="category-btn"
-                        data-category="Other">Other</button>
+                    <button type="button" class="category-btn active" data-category="all">All Items</button>
+                    <button type="button" class="category-btn" data-category="Books">Books</button>
+                    <button type="button" class="category-btn" data-category="Electronics">Electronics</button>
+                    <button type="button" class="category-btn" data-category="Photography">Photography</button>
+                    <button type="button" class="category-btn" data-category="Sports">Sports</button>
+                    <button type="button" class="category-btn" data-category="Tools">Tools</button>
+                    <button type="button" class="category-btn" data-category="Stationery">Stationery</button>
+                    <button type="button" class="category-btn" data-category="Other">Other</button>
                 </div>
 
                 <div class="results-info">
@@ -139,7 +126,7 @@
         </div>
     </footer>
 
-    <script type="module" src="js/browse.js"></script>
+    <script type="module" src="browse.js"></script>
 
 </body>
 </html>
