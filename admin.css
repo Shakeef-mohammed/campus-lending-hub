@@ -14,34 +14,59 @@ body {
 
 
 /* Admin Header */
-
 .admin-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
     gap: 20px;
+    width: 100%;
+    padding: 24px 28px;
     margin-bottom: 30px;
+    background: #ffffff;
+    border: 1px solid #e8e7ef;
+    border-radius: 18px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
 .admin-header h1 {
-    font-size: 32px;
+    font-size: 30px;
+    font-weight: 800;
+    color: #211b38;
     margin: 12px 0 8px;
 }
 
 .admin-header p {
     color: #77758a;
+    font-size: 14px;
+    line-height: 1.6;
     margin: 0;
 }
 
 .admin-label {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     background: #eee8ff;
     color: #6841c6;
     padding: 7px 14px;
     border-radius: 20px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
 }
+
+@media (max-width: 600px) {
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 20px;
+    }
+
+    .admin-header h1 {
+        font-size: 24px;
+    }
+}
+
 
 
 /* Admin Container */
