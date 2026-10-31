@@ -1059,3 +1059,121 @@ td {
     }
 
 }
+
+/* =========================================
+   CAMPUSLEND DASHBOARD HTML FIX
+========================================= */
+
+body {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    overflow-y: auto;
+    z-index: 100;
+    align-items: stretch;
+}
+
+.sidebar h2 {
+    color: var(--primary);
+    font-size: 25px;
+    margin-bottom: 30px;
+    padding: 0 12px;
+}
+
+.sidebar h2 span {
+    color: var(--text);
+}
+
+.sidebar > a {
+    display: block;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    border-radius: 9px;
+    color: #625b72;
+    font-size: 13px;
+}
+
+.sidebar > a:hover,
+.sidebar > a.active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.menu-label {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: bold;
+    margin: 20px 12px 8px;
+}
+
+/* Main content */
+.dashboard-main {
+    flex: 1;
+    min-width: 0;
+    width: calc(100% - 260px);
+    margin-left: 260px;
+    padding: 30px 35px;
+}
+
+.dashboard-main .topbar {
+    margin-bottom: 30px;
+}
+
+.dashboard-main .topbar h2 {
+    font-size: 25px;
+}
+
+/* Logout */
+.sidebar-logout {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: var(--danger-bg);
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.sidebar-logout:hover {
+    background: #f8d5d5;
+}
+
+/* Footer */
+.dashboard-footer {
+    margin-top: 35px;
+    padding: 20px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* Mobile */
+@media (max-width: 760px) {
+    body {
+        display: block;
+    }
+
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        min-height: auto;
+    }
+
+    .dashboard-main {
+        width: 100%;
+        margin-left: 0;
+        padding: 20px 15px;
+    }
+}
+
