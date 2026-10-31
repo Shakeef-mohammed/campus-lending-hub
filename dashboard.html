@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,47 +6,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0f172a">
 
-    <title>CampusShare | Student Dashboard</title>
+    <title>Student Dashboard | CampusLend</title>
 
     <link rel="stylesheet" href="dashboard.css">
 </head>
 
 <body>
 
-    <!-- Sidebar -->
+    <!-- SIDEBAR -->
     <aside class="sidebar">
 
-        <h2>Campus<span>Share</span></h2>
+        <h2>Campus<span>Lend</span></h2>
 
         <p class="menu-label">WORKSPACE</p>
 
-        <a class="active" href="dashboard.html">
+        <a href="#overview" class="active" data-section="overview">
             Dashboard
         </a>
 
         <a href="index.html#items">
-            Browse Items
+            Browse Resources
         </a>
 
-        <a href="#receivedRequests">
+        <a href="#addItemPanel" data-section="addItemPanel">
+            Add Resource
+        </a>
+
+        <a href="#receivedRequests" data-section="receivedRequests">
             Borrow Requests Received
         </a>
 
-        <a href="#myRequests">
-            My Requests
+        <a href="#myRequests" data-section="myRequests">
+            My Borrow Requests
         </a>
 
-        <a href="#myBorrowings">
+        <a href="#myBorrowings" data-section="myBorrowings">
             My Borrowings
         </a>
 
-        <a href="#history">
+        <a href="#history" data-section="history">
             History
+        </a>
+
+        <a href="#items" data-section="items">
+            My Listed Resources
         </a>
 
         <p class="menu-label">ACCOUNT</p>
 
-        <a href="#profile">
+        <a href="#profile" data-section="profile">
             My Profile
         </a>
 
@@ -53,63 +62,83 @@
             Back to Home
         </a>
 
+        <button type="button" id="logoutButton" class="sidebar-logout">
+            Logout
+        </button>
+
     </aside>
 
 
-    <!-- Main Dashboard -->
+    <!-- MAIN DASHBOARD -->
     <main class="dashboard-main">
 
-        <!-- Topbar -->
+        <!-- TOPBAR -->
         <header class="topbar">
 
             <div>
-                <h2>Student Dashboard</h2>
-                <p>Manage your campus borrowing activity.</p>
+                <h2 id="pageTitle">Student Dashboard</h2>
+                <p>Manage your campus resources and borrowing activity.</p>
             </div>
 
             <div class="user-area">
-
                 <span id="userName">Student</span>
-
-                <button id="logoutButton" type="button">
-                    Logout
-                </button>
-
             </div>
 
         </header>
 
 
-        <!-- Welcome Section -->
-        <section class="welcome" id="profile">
+        <!-- OVERVIEW -->
+        <section class="dashboard-panel page-section active" id="overview">
 
-            <h1>
-                Welcome back,
-                <span id="welcomeName">Student</span>!
-            </h1>
+            <div class="welcome">
 
-            <p>
-                Manage your items, borrowing requests and campus resources
-                from one place.
-            </p>
+                <h1>
+                    Welcome back,
+                    <span id="welcomeName">Student</span>!
+                </h1>
+
+                <p>
+                    Manage your resources, borrowing requests and student profile
+                    from one place.
+                </p>
+
+            </div>
+
+            <div class="quick-actions">
+
+                <a href="#addItemPanel" data-section="addItemPanel">
+                    + Add Resource
+                </a>
+
+                <a href="#items" data-section="items">
+                    My Listed Resources
+                </a>
+
+                <a href="#profile" data-section="profile">
+                    Edit My Profile
+                </a>
+
+                <a href="index.html#items">
+                    Browse Resources
+                </a>
+
+            </div>
 
         </section>
 
 
-        <!-- Add Item Section -->
-        <section class="dashboard-panel" id="addItemPanel">
+        <!-- ADD RESOURCE -->
+        <section class="dashboard-panel page-section" id="addItemPanel">
 
-            <h2>List an Item</h2>
+            <h2>List a Resource</h2>
 
-            <p style="margin-bottom: 18px; color: #64748b;">
+            <p style="margin-bottom:18px;color:#64748b;">
                 Share an item with other university students.
             </p>
 
             <form id="addItemForm">
 
-                <label for="itemName">
-                    Item Name
-                </label>
+                <label for="itemName">Item Name</label>
 
                 <input
                     id="itemName"
@@ -120,55 +149,22 @@
                     placeholder="e.g. Scientific Calculator"
                 >
 
+                <label for="itemCategory">Category</label>
 
-                <label for="itemCategory">
-                    Category
-                </label>
+                <select id="itemCategory" name="itemCategory" required>
 
-                <select
-                    id="itemCategory"
-                    name="itemCategory"
-                    required
-                >
-
-                    <option value="">
-                        Choose a category
-                    </option>
-
-                    <option value="Textbooks">
-                        Textbooks
-                    </option>
-
-                    <option value="Calculators">
-                        Calculators
-                    </option>
-
-                    <option value="Laptops">
-                        Laptops
-                    </option>
-
-                    <option value="Cameras">
-                        Cameras
-                    </option>
-
-                    <option value="Sports Equipment">
-                        Sports Equipment
-                    </option>
-
-                    <option value="Accessories">
-                        Accessories
-                    </option>
-
-                    <option value="Other">
-                        Other
-                    </option>
+                    <option value="">Choose a category</option>
+                    <option value="Textbooks">Textbooks</option>
+                    <option value="Calculators">Calculators</option>
+                    <option value="Laptops">Laptops</option>
+                    <option value="Cameras">Cameras</option>
+                    <option value="Sports Equipment">Sports Equipment</option>
+                    <option value="Accessories">Accessories</option>
+                    <option value="Other">Other</option>
 
                 </select>
 
-
-                <label for="itemDescription">
-                    Description
-                </label>
+                <label for="itemDescription">Description</label>
 
                 <textarea
                     id="itemDescription"
@@ -179,10 +175,7 @@
                     placeholder="Describe the item and its condition"
                 ></textarea>
 
-
-                <label for="itemLocation">
-                    Pickup Location
-                </label>
+                <label for="itemLocation">Pickup Location</label>
 
                 <input
                     id="itemLocation"
@@ -193,20 +186,15 @@
                     placeholder="e.g. University library"
                 >
 
-
-                <button
-                    id="addItemButton"
-                    type="submit"
-                >
-                    Add Item
+                <button id="addItemButton" type="submit">
+                    Add Resource
                 </button>
-
 
                 <p
                     id="itemFormMessage"
                     role="status"
                     aria-live="polite"
-                    style="margin-top: 12px;"
+                    style="margin-top:12px;"
                 ></p>
 
             </form>
@@ -214,17 +202,13 @@
         </section>
 
 
-        <!-- Borrow Requests Received -->
-        <section
-            class="dashboard-panel requests-section"
-            id="receivedRequests"
-        >
+        <!-- RECEIVED REQUESTS -->
+        <section class="dashboard-panel page-section" id="receivedRequests">
 
             <h2>Borrow Requests Received</h2>
 
-            <p style="margin-bottom: 18px; color: #64748b;">
-                Requests from students who want to borrow your items
-                will appear here.
+            <p style="margin-bottom:18px;color:#64748b;">
+                Requests from students who want to borrow your resources.
             </p>
 
             <div id="requestsList" aria-live="polite">
@@ -234,119 +218,366 @@
         </section>
 
 
-        <!-- Campus Items -->
-        <section
-            class="dashboard-panel"
-            id="items"
-        >
+        <!-- MY LISTED RESOURCES -->
+        <section class="dashboard-panel page-section" id="items">
 
-            <h2>My Listed Items</h2>
+            <h2>My Listed Resources</h2>
 
-            <p style="margin-bottom: 18px; color: #64748b;">
-                Items you have shared with the campus community.
+            <p style="margin-bottom:18px;color:#64748b;">
+                Manage the resources you have shared with the campus community.
             </p>
 
             <div id="itemsList" aria-live="polite">
-                <p>Loading items...</p>
+                Loading your resources...
             </div>
 
         </section>
 
 
-        <!-- My Requests -->
-        <section
-            class="dashboard-panel"
-            id="myRequests"
-        >
+        <!-- MY REQUESTS -->
+        <section class="dashboard-panel page-section" id="myRequests">
 
             <h2>My Borrow Requests</h2>
 
-            <p style="color: #64748b;">
-                Your requests to borrow items from other students
-                will appear here.
+            <p style="color:#64748b;">
+                Your requests to borrow resources from other students.
             </p>
 
             <div id="myRequestsList">
-                <p>
-                    Your borrowing request history will be displayed here.
-                </p>
+                Loading your requests...
             </div>
 
         </section>
 
 
-        <!-- My Borrowings -->
-        <section
-            class="dashboard-panel"
-            id="myBorrowings"
-        >
+        <!-- MY BORROWINGS -->
+        <section class="dashboard-panel page-section" id="myBorrowings">
 
             <h2>My Borrowings</h2>
 
-            <p style="color: #64748b;">
-                Items you have successfully borrowed will appear here.
+            <p style="color:#64748b;">
+                Resources you have successfully borrowed.
             </p>
 
             <div id="myBorrowingsList">
-                <p>
-                    Your active borrowings will be displayed here.
-                </p>
+                Loading your borrowings...
             </div>
 
         </section>
 
 
-        <!-- History -->
-        <section
-            class="dashboard-panel"
-            id="history"
-        >
+        <!-- HISTORY -->
+        <section class="dashboard-panel page-section" id="history">
 
             <h2>Borrowing History</h2>
 
-            <p style="color: #64748b;">
-                Your completed and returned borrowing activities
-                will be displayed here.
+            <p style="color:#64748b;">
+                Your completed and rejected borrowing activities.
             </p>
 
             <div id="historyList">
+                Loading history...
+            </div>
+
+        </section>
+
+
+        <!-- MY PROFILE -->
+        <section class="dashboard-panel page-section" id="profile">
+
+            <div class="page-heading">
+
+                <p class="eyebrow">STUDENT ACCOUNT</p>
+
+                <h1>My Profile</h1>
+
                 <p>
-                    Your borrowing history will be displayed here.
+                    View and manage your personal and academic information.
                 </p>
+
+            </div>
+
+
+            <div class="profile-layout">
+
+                <!-- PROFILE SIDEBAR -->
+                <aside class="profile-sidebar">
+
+                    <div class="profile-avatar" id="profile-avatar">
+                        S
+                    </div>
+
+                    <h2 id="sidebar-name">Student Name</h2>
+
+                    <p class="student-role">CampusLend Student</p>
+
+                    <span class="account-badge">
+                        Verified Student
+                    </span>
+
+                    <div class="sidebar-divider"></div>
+
+                    <a
+                        href="#items"
+                        class="sidebar-link"
+                        data-section="items"
+                    >
+                        My Listed Resources
+                    </a>
+
+                    <a
+                        href="#myBorrowings"
+                        class="sidebar-link"
+                        data-section="myBorrowings"
+                    >
+                        My Borrowings
+                    </a>
+
+                    <a
+                        href="#profile"
+                        class="sidebar-link selected"
+                        data-section="profile"
+                    >
+                        My Profile
+                    </a>
+
+                </aside>
+
+
+                <!-- PROFILE CONTENT -->
+                <section class="profile-content">
+
+                    <div class="content-header">
+
+                        <div>
+                            <h2>Personal Information</h2>
+
+                            <p>
+                                Your personal and academic information.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            id="edit-profile-button"
+                            class="edit-button"
+                        >
+                            ✎ Edit Profile
+                        </button>
+
+                    </div>
+
+
+                    <form id="profile-form">
+
+                        <div class="form-grid">
+
+                            <div class="form-group">
+
+                                <label for="full-name">Full Name</label>
+
+                                <input
+                                    type="text"
+                                    id="full-name"
+                                    name="fullName"
+                                    required
+                                    minlength="2"
+                                    maxlength="100"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="student-id">Student ID</label>
+
+                                <input
+                                    type="text"
+                                    id="student-id"
+                                    name="studentId"
+                                    disabled
+                                >
+
+                                <small>Student ID cannot be changed here.</small>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="email">University Email</label>
+
+                                <input
+                                    type="email"
+                                    id="email"
+                                    name="email"
+                                    required
+                                    maxlength="254"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="phone">Contact Number</label>
+
+                                <input
+                                    type="tel"
+                                    id="phone"
+                                    name="phone"
+                                    maxlength="20"
+                                    placeholder="Enter your contact number"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="faculty">Faculty</label>
+
+                                <input
+                                    type="text"
+                                    id="faculty"
+                                    name="faculty"
+                                    maxlength="100"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="department">Department</label>
+
+                                <input
+                                    type="text"
+                                    id="department"
+                                    name="department"
+                                    maxlength="100"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="university">University</label>
+
+                                <input
+                                    type="text"
+                                    id="university"
+                                    name="university"
+                                    maxlength="150"
+                                    disabled
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="academic-year">Academic Year</label>
+
+                                <select
+                                    id="academic-year"
+                                    name="academicYear"
+                                    disabled
+                                >
+                                    <option value="">Select academic year</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                    <option value="5">5th Year</option>
+                                </select>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="account-status">Account Status</label>
+
+                                <input
+                                    type="text"
+                                    id="account-status"
+                                    value="Verified Account"
+                                    disabled
+                                >
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="profile-message"
+                            class="message"
+                            role="status"
+                            aria-live="polite"
+                        ></div>
+
+
+                        <div id="form-actions" class="form-actions" hidden>
+
+                            <button type="submit" class="save-button">
+                                Save Changes
+                            </button>
+
+                            <button
+                                type="button"
+                                id="cancel-edit-button"
+                                class="cancel-button"
+                            >
+                                Cancel
+                            </button>
+
+                        </div>
+
+                    </form>
+
+
+                    <div class="account-info">
+
+                        <h3>Account Information</h3>
+
+                        <div class="account-info-row">
+                            <span>Account Type</span>
+                            <strong>Student</strong>
+                        </div>
+
+                        <div class="account-info-row">
+                            <span>Platform</span>
+                            <strong>CampusLend</strong>
+                        </div>
+
+                        <div class="account-info-row">
+                            <span>Profile Mode</span>
+                            <strong>Firebase Account</strong>
+                        </div>
+
+                    </div>
+
+                </section>
+
             </div>
 
         </section>
 
 
-        <!-- Quick Actions -->
-        <section class="dashboard-panel" id="quickActions">
-
-            <h2>Quick Actions</h2>
-
-            <div class="quick-actions">
-
-                <a href="index.html#items">
-                    Browse Campus Resources
-                </a>
-
-                <a href="#addItemPanel">
-                    List an Item
-                </a>
-
-                <a href="index.html">
-                    Return to Home Page
-                </a>
-
-            </div>
-
-        </section>
-
-
-        <!-- Footer -->
+        <!-- FOOTER -->
         <footer class="dashboard-footer">
 
             <p>
-                CampusShare – Share Resources, Build Community.
+                CampusLend – Share Resources, Build Community.
             </p>
 
         </footer>
@@ -354,7 +585,7 @@
     </main>
 
 
-    <!-- Dashboard JavaScript -->
+    <!-- DASHBOARD JAVASCRIPT -->
     <script type="module" src="dashboard.js"></script>
 
 </body>
