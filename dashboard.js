@@ -790,7 +790,8 @@ async function deleteMyItem(itemId) {
     // Check for pending or active requests linked to this resource.
     const requestsQuery = query(
       collection(db, "borrowRequests"),
-      where("itemId", "==", itemId)
+      where("itemId", "==", itemId),
+where("ownerId", "==", currentUser.uid)
     );
 
     const requestsSnapshot = await getDocs(requestsQuery);
