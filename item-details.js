@@ -270,8 +270,9 @@ async function submitBorrowRequest(event) {
   setBorrowButtonState(true, "Checking...");
 
   try {
-    await currentUser.reload();
-    currentUser = auth.currentUser;
+   await currentUser.reload();
+await currentUser.getIdToken(true);
+currentUser = auth.currentUser;
 
     if (!currentUser?.emailVerified) {
       showMessage(
