@@ -1461,6 +1461,7 @@ onAuthStateChanged(auth, async (user) => {
 
   try {
     await user.reload();
+    await user.getIdToken(true);
 
     currentUser = auth.currentUser;
 
