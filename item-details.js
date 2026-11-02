@@ -1,4 +1,3 @@
-
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -57,6 +56,7 @@ function showMessage(element, message, type = "info") {
   element.className = `details-message ${type}`;
 }
 
+// Borrow button state
 function setBorrowButtonState(disabled, text) {
   if (!borrowButton) return;
 
@@ -156,6 +156,11 @@ function updateAvailability() {
 
   if (!currentUser.emailVerified) {
     setBorrowButtonState(true, "Verify Email First");
+    return;
+  }
+
+  if (requestSubmitted) {
+    setBorrowButtonState(true, "Request Sent");
     return;
   }
 
@@ -270,9 +275,10 @@ async function submitBorrowRequest(event) {
   setBorrowButtonState(true, "Checking...");
 
   try {
-   await currentUser.reload();
-await currentUser.getIdToken(true);
-currentUser = auth.currentUser;
+    await currentUser.reload();
+    await currentUser.getIdToken(true);
+
+    currentUser = auth.currentUser;
 
     if (!currentUser?.emailVerified) {
       showMessage(
@@ -302,7 +308,9 @@ currentUser = auth.currentUser;
 
     const requestRef = doc(collection(db, "borrowRequests"));
 
-    await runTransaction(db, async transaction => {
+    await runTransaction(db, async (transaction) => {
+
+      // Get latest item data
       const itemSnapshot = await transaction.get(currentItemRef);
 
       if (!itemSnapshot.exists()) {
@@ -311,42 +319,50 @@ currentUser = auth.currentUser;
 
       const item = itemSnapshot.data();
 
+      // Check owner
       if (item.ownerId === currentUser.uid) {
         throw new Error("You cannot borrow your own item.");
       }
 
-      if (item.available !== true || item.activeRequestId) {
+      // Check availability
+      if (
+        item.available !== true ||
+        item.activeRequestId
+      ) {
         throw new Error("Sorry, this item is no longer available.");
       }
 
+      // Create borrow request only
       transaction.set(requestRef, {
-        itemId,
+        itemId: itemId,
         itemName: item.name || "",
+
         ownerId: item.ownerId,
         ownerName: item.ownerName || "",
+
         borrowerId: currentUser.uid,
+
         borrowerName:
           currentUser.displayName ||
           currentUser.email ||
           "CampusLend member",
+
         status: "pending",
-        startDate,
-        endDate,
+
+        startDate: startDate,
+        endDate: endDate,
+
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
 
-      transaction.update(currentItemRef, {
-        available: false,
-        activeRequestId: requestRef.id,
-        updatedAt: serverTimestamp()
-      });
+      // IMPORTANT:
+      // Do NOT update items.available here.
+      // The item remains available until the owner accepts.
     });
 
+    // Request successfully submitted
     requestSubmitted = true;
-
-    currentItem.available = false;
-    currentItem.activeRequestId = requestRef.id;
 
     setBorrowButtonState(true, "Request Sent");
 
@@ -356,7 +372,8 @@ currentUser = auth.currentUser;
       "success"
     );
 
-    displayItem(currentItem);
+    // Item remains available until owner accepts
+    updateAvailability();
 
   } catch (error) {
     console.error("Borrow request failed:", error);
@@ -377,16 +394,22 @@ currentUser = auth.currentUser;
 }
 
 // Form event
-borrowForm?.addEventListener("submit", submitBorrowRequest);
+if (borrowForm) {
+  borrowForm.addEventListener(
+    "submit",
+    submitBorrowRequest
+  );
+}
 
 // Login state
-onAuthStateChanged(auth, async user => {
+onAuthStateChanged(auth, async (user) => {
   currentUser = user;
 
   if (user) {
     try {
       await user.reload();
       currentUser = auth.currentUser;
+
     } catch (error) {
       console.error("Authentication refresh failed:", error);
     }
