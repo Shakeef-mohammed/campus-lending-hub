@@ -1,4 +1,3 @@
-
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -631,18 +630,15 @@ async function updateBorrowRequest(requestId, action) {
           activeRequestId: requestId,
           updatedAt: serverTimestamp()
         });
-
       } else if (action === "reject") {
+        // Rejecting one request must not change the item's availability.
+        // Another pending request may still exist for this resource.
         transaction.update(requestRef, {
           status: "rejected",
           updatedAt: serverTimestamp()
         });
-
-        transaction.update(itemRef, {
-          available: true,
-          activeRequestId: null,
-          updatedAt: serverTimestamp()
-        });
+      } else {
+        throw new Error("Invalid request action.");
       }
     });
 
@@ -658,101 +654,6 @@ async function updateBorrowRequest(requestId, action) {
     console.error("Request update error:", error);
     alert(error.message || "Unable to update the request.");
   }
-}
-
-/* =====================================
-   DELETE MY ITEM
-===================================== */
-
-async function deleteMyItem(itemId, button) {
-
-    if (!currentUser || !itemId) {
-        alert("Unable to identify this resource.");
-        return;
-    }
-
-    if (!confirm("Are you sure you want to delete this resource?")) {
-        return;
-    }
-
-    try {
-        button.disabled = true;
-        button.textContent = "Deleting...";
-
-        const itemRef = doc(db, "items", itemId);
-        const itemSnapshot = await getDoc(itemRef);
-
-        if (!itemSnapshot.exists()) {
-            throw new Error("ITEM_NOT_FOUND");
-        }
-
-        const item = itemSnapshot.data();
-
-        if (item.ownerId !== currentUser.uid) {
-            throw new Error("NOT_OWNER");
-        }
-
-        if (
-            item.available !== true ||
-            item.activeRequestId != null
-        ) {
-            throw new Error("ITEM_IN_USE");
-        }
-
-        const requestsQuery = query(
-            collection(db, "borrowRequests"),
-            where("itemId", "==", itemId),
-            where("ownerId", "==", currentUser.uid)
-        );
-
-        const requestsSnapshot = await getDocs(requestsQuery);
-
-        const activeStatuses = [
-            "pending",
-            "approved",
-            "return_requested"
-        ];
-
-        const hasActiveRequest = requestsSnapshot.docs.some(
-            requestDoc =>
-                activeStatuses.includes(
-                    requestDoc.data().status
-                )
-        );
-
-        if (hasActiveRequest) {
-            throw new Error("ACTIVE_REQUEST_EXISTS");
-        }
-
-        await deleteDoc(itemRef);
-
-        alert("Resource deleted successfully!");
-
-        await refreshDashboard();
-
-    } catch (error) {
-
-        console.error("Delete resource error:", error);
-        console.error("Delete error code:", error.code);
-        console.error("Delete error message:", error.message);
-
-        const messages = {
-            ITEM_NOT_FOUND: "Resource not found.",
-            NOT_OWNER: "You are not the owner of this resource.",
-            ITEM_IN_USE: "This resource is currently reserved or borrowed.",
-            ACTIVE_REQUEST_EXISTS:
-                "This resource has an active borrow request."
-        };
-
-        alert(
-            messages[error.message] ||
-            "Unable to delete resource. Please check Firestore permissions."
-        );
-
-    } finally {
-        button.disabled = false;
-        button.textContent = "Delete Resource";
-    }
 }
 
 
@@ -847,7 +748,10 @@ async function loadMyItems() {
 ========================================= */
 
 async function deleteMyItem(itemId) {
-  if (!currentUser || !itemId) return;
+  if (!currentUser || !itemId) {
+    alert("Unable to identify this resource.");
+    return;
+  }
 
   const confirmed = confirm(
     "Are you sure you want to delete this resource?"
@@ -860,67 +764,59 @@ async function deleteMyItem(itemId) {
     const itemSnapshot = await getDoc(itemRef);
 
     if (!itemSnapshot.exists()) {
-      alert("This resource does not exist.");
-      return;
+      throw new Error("Resource not found.");
     }
 
     const item = itemSnapshot.data();
 
     if (item.ownerId !== currentUser.uid) {
-      alert("You are not allowed to delete this resource.");
-      return;
+      throw new Error("You are not the owner of this resource.");
     }
 
-    // Do not delete a resource that is currently borrowed.
     if (
       item.available === false ||
-      item.activeRequestId
+      item.activeRequestId != null
     ) {
-      alert(
-        "This resource cannot be deleted while it is borrowed or has an active request."
+      throw new Error(
+        "This resource is currently reserved or borrowed."
       );
-      return;
     }
 
-    // Check for pending or active requests linked to this resource.
     const requestsQuery = query(
       collection(db, "borrowRequests"),
       where("itemId", "==", itemId),
-where("ownerId", "==", currentUser.uid)
+      where("ownerId", "==", currentUser.uid)
     );
 
     const requestsSnapshot = await getDocs(requestsQuery);
 
-    const hasActiveRequest = requestsSnapshot.docs.some((document) => {
-      const status = document.data().status;
+    const activeStatuses = [
+      "pending",
+      "approved",
+      "return_requested"
+    ];
 
-      return [
-        "pending",
-        "approved",
-        "return_requested"
-      ].includes(status);
-    });
+    const hasActiveRequest = requestsSnapshot.docs.some(
+      (requestDoc) =>
+        activeStatuses.includes(requestDoc.data().status)
+    );
 
     if (hasActiveRequest) {
-      alert(
-        "This resource has an active borrow request. You cannot delete it now."
+      throw new Error(
+        "This resource has an active borrow request."
       );
-      return;
     }
 
     await deleteDoc(itemRef);
 
-    alert("Resource deleted successfully.");
+    alert("Resource deleted successfully!");
 
     await refreshDashboard();
 
   } catch (error) {
     console.error("Delete resource error:", error);
 
-    alert(
-      error.message ||
-      "Unable to delete this resource. Please try again."
-    );
+    alert(error.message || "Unable to delete this resource.");
   }
 }
 
