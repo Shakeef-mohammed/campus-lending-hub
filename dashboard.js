@@ -743,83 +743,10 @@ async function loadMyItems() {
 }
 
 
-/* =========================================
-   10. DELETE MY RESOURCE
-========================================= */
 
-async function deleteMyItem(itemId) {
-  if (!currentUser || !itemId) {
-    alert("Unable to identify this resource.");
-    return;
-  }
 
-  const confirmed = confirm(
-    "Are you sure you want to delete this resource?"
-  );
 
-  if (!confirmed) return;
-
-  try {
-    const itemRef = doc(db, "items", itemId);
-    const itemSnapshot = await getDoc(itemRef);
-
-    if (!itemSnapshot.exists()) {
-      throw new Error("Resource not found.");
-    }
-
-    const item = itemSnapshot.data();
-
-    if (item.ownerId !== currentUser.uid) {
-      throw new Error("You are not the owner of this resource.");
-    }
-
-    if (
-      item.available === false ||
-      item.activeRequestId != null
-    ) {
-      throw new Error(
-        "This resource is currently reserved or borrowed."
-      );
-    }
-
-    const requestsQuery = query(
-      collection(db, "borrowRequests"),
-      where("itemId", "==", itemId),
-      where("ownerId", "==", currentUser.uid)
-    );
-
-    const requestsSnapshot = await getDocs(requestsQuery);
-
-    const activeStatuses = [
-      "pending",
-      "approved",
-      "return_requested"
-    ];
-
-    const hasActiveRequest = requestsSnapshot.docs.some(
-      (requestDoc) =>
-        activeStatuses.includes(requestDoc.data().status)
-    );
-
-    if (hasActiveRequest) {
-      throw new Error(
-        "This resource has an active borrow request."
-      );
-    }
-
-    await deleteDoc(itemRef);
-
-    alert("Resource deleted successfully!");
-
-    await refreshDashboard();
-
-  } catch (error) {
-    console.error("Delete resource error:", error);
-
-    alert(error.message || "Unable to delete this resource.");
-  }
-}
-
+  
 
 /* =========================================
    11. LOAD MY BORROW REQUESTS
