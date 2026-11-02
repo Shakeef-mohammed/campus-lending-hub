@@ -9,7 +9,6 @@ import {
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -671,7 +670,6 @@ async function loadMyItems() {
 
     const snapshot = await getDocs(itemsQuery);
 
-    // Archived resources are hidden from the active items list.
     const items = snapshot.docs
       .map((document) => ({
         id: document.id,
@@ -761,7 +759,6 @@ async function deleteMyItem(itemId) {
   try {
     const itemRef = doc(db, "items", itemId);
 
-    // Check that the item exists and belongs to the current user.
     const initialItemSnapshot = await getDoc(itemRef);
 
     if (!initialItemSnapshot.exists()) {
@@ -778,7 +775,6 @@ async function deleteMyItem(itemId) {
       throw new Error("This resource has already been removed.");
     }
 
-    // Find all requests connected to this resource.
     const requestsQuery = query(
       collection(db, "borrowRequests"),
       where("itemId", "==", itemId)
@@ -791,7 +787,6 @@ async function deleteMyItem(itemId) {
     );
 
     await runTransaction(db, async (transaction) => {
-      // Read item again inside transaction.
       const itemSnapshot = await transaction.get(itemRef);
 
       if (!itemSnapshot.exists()) {
@@ -808,7 +803,7 @@ async function deleteMyItem(itemId) {
         throw new Error("This resource has already been removed.");
       }
 
-      // Read all requests before making transaction writes.
+      // Read all request documents before writing.
       const requestSnapshots = [];
 
       for (const requestRef of requestRefs) {
@@ -822,7 +817,7 @@ async function deleteMyItem(itemId) {
         }
       }
 
-      // Identify active borrowing requests.
+      // Find active borrowing requests.
       const activeRequests = requestSnapshots.filter(({ data }) => {
         return (
           data.status === "approved" ||
@@ -836,7 +831,7 @@ async function deleteMyItem(itemId) {
         );
       }
 
-      // Reject all pending requests because the resource is being removed.
+      // Reject pending requests.
       requestSnapshots.forEach(({ ref, data }) => {
         if (data.status === "pending") {
           transaction.update(ref, {
@@ -846,12 +841,12 @@ async function deleteMyItem(itemId) {
         }
       });
 
-      // Preserve the active borrowing request if the item is with a borrower.
+      // Preserve an active borrowing request.
       const activeRequestId = activeRequests.length === 1
         ? activeRequests[0].ref.id
         : null;
 
-      // Soft delete: keep the document so return and history still work.
+      // Archive the resource instead of permanently deleting it.
       transaction.update(itemRef, {
         isArchived: true,
         archivedAt: serverTimestamp(),
@@ -1423,6 +1418,9 @@ document.addEventListener("click", async (event) => {
       case "delete-item":
         await deleteMyItem(itemId);
         break;
+
+      default:
+        console.warn("Unknown dashboard action:", action);
     }
 
   } catch (error) {
