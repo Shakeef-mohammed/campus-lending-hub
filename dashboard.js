@@ -233,9 +233,7 @@ function openDashboardSection(sectionId, clickedLink = null) {
       `[data-section="${sectionId}"]`
     );
 
-    if (matchingLink) {
-      matchingLink.classList.add("active");
-    }
+    if (matchingLink) matchingLink.classList.add("active");
   }
 
   const title = targetSection.dataset.title;
@@ -286,7 +284,6 @@ async function loadUserProfile() {
     currentUser.email?.split("@")[0] ||
     "Student";
 
-  // Existing dashboard name fields
   const userName = document.getElementById("userName");
   const welcomeName = document.getElementById("welcomeName");
   const sidebarName = document.getElementById("sidebar-name");
@@ -295,7 +292,6 @@ async function loadUserProfile() {
   if (welcomeName) welcomeName.textContent = currentUserName;
   if (sidebarName) sidebarName.textContent = currentUserName;
 
-  // Profile fields
   setProfileField("full-name", profile.displayName || currentUserName);
   setProfileField("student-id", profile.studentId || "");
   setProfileField("email", profile.email || currentUser.email || "");
@@ -324,9 +320,7 @@ async function loadUserProfile() {
 function setProfileField(id, value) {
   const field = document.getElementById(id);
 
-  if (field) {
-    field.value = value;
-  }
+  if (field) field.value = value;
 }
 
 
@@ -354,9 +348,7 @@ function setProfileEditing(enabled) {
   editableFields.forEach((id) => {
     const field = document.getElementById(id);
 
-    if (field) {
-      field.disabled = !enabled;
-    }
+    if (field) field.disabled = !enabled;
   });
 
   if (editProfileButton) {
@@ -371,9 +363,7 @@ function setProfileEditing(enabled) {
 
 if (editProfileButton) {
   editProfileButton.addEventListener("click", () => {
-    if (profileMessage) {
-      profileMessage.textContent = "";
-    }
+    if (profileMessage) profileMessage.textContent = "";
 
     setProfileEditing(true);
   });
@@ -385,9 +375,7 @@ if (cancelEditButton) {
     await loadUserProfile();
     setProfileEditing(false);
 
-    if (profileMessage) {
-      profileMessage.textContent = "";
-    }
+    if (profileMessage) profileMessage.textContent = "";
   });
 }
 
@@ -410,9 +398,7 @@ if (profileForm) {
       return;
     }
 
-    const saveButton = profileForm.querySelector(
-      'button[type="submit"]'
-    );
+    const saveButton = profileForm.querySelector('button[type="submit"]');
 
     setButtonLoading(saveButton, true, "Saving...");
 
@@ -534,25 +520,13 @@ async function loadReceivedRequests() {
             </span>
           </div>
 
-          <p>
-            <strong>Borrower:</strong>
+          <p><strong>Borrower:</strong>
             ${escapeHTML(request.borrowerName || "Student")}
           </p>
 
-          <p>
-            <strong>Start Date:</strong>
-            ${formatDate(request.startDate)}
-          </p>
-
-          <p>
-            <strong>End Date:</strong>
-            ${formatDate(request.endDate)}
-          </p>
-
-          <p>
-            <strong>Requested On:</strong>
-            ${formatDate(request.createdAt)}
-          </p>
+          <p><strong>Start Date:</strong> ${formatDate(request.startDate)}</p>
+          <p><strong>End Date:</strong> ${formatDate(request.endDate)}</p>
+          <p><strong>Requested On:</strong> ${formatDate(request.createdAt)}</p>
 
           <div class="card-actions">
             ${createChatLink(request.id)}
@@ -612,9 +586,11 @@ async function updateBorrowRequest(requestId, action) {
         throw new Error("You do not own this resource.");
       }
 
-      if (action === "accept") {
+      if (item.isArchived === true) {
+        throw new Error("This resource has been archived.");
+      }
 
-        // Check whether another request is already approved.
+      if (action === "accept") {
         if (
           item.activeRequestId &&
           item.activeRequestId !== requestId
@@ -655,13 +631,10 @@ async function updateBorrowRequest(requestId, action) {
         });
 
       } else if (action === "reject") {
-
         transaction.update(requestRef, {
           status: "rejected",
           updatedAt: serverTimestamp()
         });
-
-        // Do not change item availability when rejecting.
 
       } else {
         throw new Error("Invalid request action.");
@@ -682,6 +655,7 @@ async function updateBorrowRequest(requestId, action) {
   }
 }
 
+
 /* =========================================
    9. LOAD MY LISTED RESOURCES
 ========================================= */
@@ -697,18 +671,21 @@ async function loadMyItems() {
 
     const snapshot = await getDocs(itemsQuery);
 
-    if (snapshot.empty) {
+    // Archived resources are hidden from the active items list.
+    const items = snapshot.docs
+      .map((document) => ({
+        id: document.id,
+        ...document.data()
+      }))
+      .filter((item) => item.isArchived !== true);
+
+    if (items.length === 0) {
       showEmptyMessage(
         itemsList,
-        "You have not listed any resources yet."
+        "You have not listed any active resources yet."
       );
       return;
     }
-
-    const items = snapshot.docs.map((document) => ({
-      id: document.id,
-      ...document.data()
-    }));
 
     items.sort(
       (a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt)
@@ -731,13 +708,11 @@ async function loadMyItems() {
 
           <h3>${escapeHTML(item.name || "Untitled Resource")}</h3>
 
-          <p>
-            <strong>Category:</strong>
+          <p><strong>Category:</strong>
             ${escapeHTML(item.category || "Other")}
           </p>
 
-          <p>
-            <strong>Location:</strong>
+          <p><strong>Location:</strong>
             ${escapeHTML(item.location || "Not specified")}
           </p>
 
@@ -750,7 +725,7 @@ async function loadMyItems() {
             <button class="btn btn-danger"
                     data-action="delete-item"
                     data-item-id="${escapeHTML(item.id)}">
-              Delete Resource
+              Remove Resource
             </button>
           </div>
         </div>
@@ -768,10 +743,139 @@ async function loadMyItems() {
 }
 
 
+/* =========================================
+   10. ARCHIVE / REMOVE MY RESOURCE
+========================================= */
 
+async function deleteMyItem(itemId) {
+  if (!currentUser || !itemId) return;
 
+  const confirmed = confirm(
+    "Remove this resource from your active listings?\n\n" +
+    "If someone has borrowed it, the borrowing record will be kept " +
+    "until the return is completed."
+  );
 
-  
+  if (!confirmed) return;
+
+  try {
+    const itemRef = doc(db, "items", itemId);
+
+    // Check that the item exists and belongs to the current user.
+    const initialItemSnapshot = await getDoc(itemRef);
+
+    if (!initialItemSnapshot.exists()) {
+      throw new Error("Resource not found.");
+    }
+
+    const initialItem = initialItemSnapshot.data();
+
+    if (initialItem.ownerId !== currentUser.uid) {
+      throw new Error("You are not allowed to remove this resource.");
+    }
+
+    if (initialItem.isArchived === true) {
+      throw new Error("This resource has already been removed.");
+    }
+
+    // Find all requests connected to this resource.
+    const requestsQuery = query(
+      collection(db, "borrowRequests"),
+      where("itemId", "==", itemId)
+    );
+
+    const requestsSnapshot = await getDocs(requestsQuery);
+
+    const requestRefs = requestsSnapshot.docs.map((document) =>
+      doc(db, "borrowRequests", document.id)
+    );
+
+    await runTransaction(db, async (transaction) => {
+      // Read item again inside transaction.
+      const itemSnapshot = await transaction.get(itemRef);
+
+      if (!itemSnapshot.exists()) {
+        throw new Error("Resource not found.");
+      }
+
+      const item = itemSnapshot.data();
+
+      if (item.ownerId !== currentUser.uid) {
+        throw new Error("You are not allowed to remove this resource.");
+      }
+
+      if (item.isArchived === true) {
+        throw new Error("This resource has already been removed.");
+      }
+
+      // Read all requests before making transaction writes.
+      const requestSnapshots = [];
+
+      for (const requestRef of requestRefs) {
+        const requestSnapshot = await transaction.get(requestRef);
+
+        if (requestSnapshot.exists()) {
+          requestSnapshots.push({
+            ref: requestRef,
+            data: requestSnapshot.data()
+          });
+        }
+      }
+
+      // Identify active borrowing requests.
+      const activeRequests = requestSnapshots.filter(({ data }) => {
+        return (
+          data.status === "approved" ||
+          data.status === "return_requested"
+        );
+      });
+
+      if (activeRequests.length > 1) {
+        throw new Error(
+          "Multiple active borrowings were found. Please check the requests first."
+        );
+      }
+
+      // Reject all pending requests because the resource is being removed.
+      requestSnapshots.forEach(({ ref, data }) => {
+        if (data.status === "pending") {
+          transaction.update(ref, {
+            status: "rejected",
+            updatedAt: serverTimestamp()
+          });
+        }
+      });
+
+      // Preserve the active borrowing request if the item is with a borrower.
+      const activeRequestId = activeRequests.length === 1
+        ? activeRequests[0].ref.id
+        : null;
+
+      // Soft delete: keep the document so return and history still work.
+      transaction.update(itemRef, {
+        isArchived: true,
+        archivedAt: serverTimestamp(),
+        available: false,
+        activeRequestId: activeRequestId,
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    alert(
+      "Resource removed from your active listings successfully."
+    );
+
+    await refreshDashboard();
+
+  } catch (error) {
+    console.error("Remove resource error:", error);
+
+    alert(
+      error.message || "Unable to remove this resource."
+    );
+  }
+}
+
 
 /* =========================================
    11. LOAD MY BORROW REQUESTS
@@ -818,20 +922,12 @@ async function loadMyRequests() {
             </span>
           </div>
 
-          <p>
-            <strong>Owner:</strong>
+          <p><strong>Owner:</strong>
             ${escapeHTML(request.ownerName || "Student")}
           </p>
 
-          <p>
-            <strong>Start Date:</strong>
-            ${formatDate(request.startDate)}
-          </p>
-
-          <p>
-            <strong>End Date:</strong>
-            ${formatDate(request.endDate)}
-          </p>
+          <p><strong>Start Date:</strong> ${formatDate(request.startDate)}</p>
+          <p><strong>End Date:</strong> ${formatDate(request.endDate)}</p>
 
           <div class="card-actions">
             ${createChatLink(request.id)}
@@ -917,15 +1013,11 @@ async function loadMyBorrowings() {
             </span>
           </div>
 
-          <p>
-            <strong>Owner:</strong>
+          <p><strong>Owner:</strong>
             ${escapeHTML(request.ownerName || "Student")}
           </p>
 
-          <p>
-            <strong>Return Date:</strong>
-            ${formatDate(request.endDate)}
-          </p>
+          <p><strong>Return Date:</strong> ${formatDate(request.endDate)}</p>
 
           <div class="card-actions">
             ${createChatLink(request.id)}
@@ -1052,7 +1144,7 @@ async function confirmReturn(requestId) {
       });
 
       transaction.update(itemRef, {
-        available: true,
+        available: item.isArchived === true ? false : true,
         activeRequestId: null,
         updatedAt: serverTimestamp()
       });
@@ -1144,16 +1236,12 @@ async function loadHistory() {
             </span>
           </div>
 
-          <p>
-            <strong>Role:</strong>
+          <p><strong>Role:</strong>
             ${isOwner ? "Resource Owner" : "Borrower"}
           </p>
 
           <p>
-            <strong>
-              ${isOwner ? "Borrower:" : "Owner:"}
-            </strong>
-
+            <strong>${isOwner ? "Borrower:" : "Owner:"}</strong>
             ${escapeHTML(
               isOwner
                 ? request.borrowerName || "Student"
@@ -1161,8 +1249,7 @@ async function loadHistory() {
             )}
           </p>
 
-          <p>
-            <strong>Completed / Updated:</strong>
+          <p><strong>Completed / Updated:</strong>
             ${formatDate(request.updatedAt || request.createdAt)}
           </p>
 
@@ -1249,6 +1336,7 @@ async function handleAddItem(event) {
 
       available: true,
       activeRequestId: null,
+      isArchived: false,
 
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
@@ -1337,6 +1425,10 @@ document.addEventListener("click", async (event) => {
         break;
     }
 
+  } catch (error) {
+    console.error("Action button error:", error);
+    alert(error.message || "Unable to complete this action.");
+
   } finally {
     button.disabled = false;
   }
@@ -1355,7 +1447,6 @@ if (logoutButton) {
     try {
       await signOut(auth);
 
-      // Replace the current history entry instead of adding a new one.
       window.location.replace("login.html");
 
     } catch (error) {
@@ -1374,8 +1465,6 @@ if (logoutButton) {
    20. BROWSER BACK / CACHE PROTECTION
 ========================================= */
 
-// If the browser restores this page from its back-forward cache,
-// check Firebase authentication again.
 window.addEventListener("pageshow", async (event) => {
   if (!event.persisted) return;
 
@@ -1394,7 +1483,6 @@ window.addEventListener("pageshow", async (event) => {
 ========================================= */
 
 onAuthStateChanged(auth, async (user) => {
-  // Let pageshow know that the first authentication check completed.
   authReadyResolve();
 
   if (!user) {
