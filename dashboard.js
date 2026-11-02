@@ -1,3 +1,4 @@
+
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -775,10 +776,11 @@ async function deleteMyItem(itemId) {
       throw new Error("This resource has already been removed.");
     }
 
+    // FIXED: Both where() conditions must be separated by a comma.
     const requestsQuery = query(
       collection(db, "borrowRequests"),
       where("itemId", "==", itemId),
-       where("ownerId", "==", currentUser.uid)
+      where("ownerId", "==", currentUser.uid)
     );
 
     const requestsSnapshot = await getDocs(requestsQuery);
