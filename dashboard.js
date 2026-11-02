@@ -613,11 +613,34 @@ async function updateBorrowRequest(requestId, action) {
       }
 
       if (action === "accept") {
+
+        // Check whether another request is already approved.
         if (
-          item.available === false ||
-          (item.activeRequestId && item.activeRequestId !== requestId)
+          item.activeRequestId &&
+          item.activeRequestId !== requestId
         ) {
-          throw new Error("This resource is no longer available.");
+          const activeRequestRef = doc(
+            db,
+            "borrowRequests",
+            item.activeRequestId
+          );
+
+          const activeRequestSnapshot = await transaction.get(
+            activeRequestRef
+          );
+
+          if (activeRequestSnapshot.exists()) {
+            const activeRequest = activeRequestSnapshot.data();
+
+            if (
+              activeRequest.status === "approved" ||
+              activeRequest.status === "return_requested"
+            ) {
+              throw new Error(
+                "This resource is already borrowed by another student."
+              );
+            }
+          }
         }
 
         transaction.update(requestRef, {
@@ -630,13 +653,16 @@ async function updateBorrowRequest(requestId, action) {
           activeRequestId: requestId,
           updatedAt: serverTimestamp()
         });
+
       } else if (action === "reject") {
-        // Rejecting one request must not change the item's availability.
-        // Another pending request may still exist for this resource.
+
         transaction.update(requestRef, {
           status: "rejected",
           updatedAt: serverTimestamp()
         });
+
+        // Do not change item availability when rejecting.
+
       } else {
         throw new Error("Invalid request action.");
       }
@@ -655,7 +681,6 @@ async function updateBorrowRequest(requestId, action) {
     alert(error.message || "Unable to update the request.");
   }
 }
-
 
 /* =========================================
    9. LOAD MY LISTED RESOURCES
