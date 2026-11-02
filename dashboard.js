@@ -660,6 +660,101 @@ async function updateBorrowRequest(requestId, action) {
   }
 }
 
+/* =====================================
+   DELETE MY ITEM
+===================================== */
+
+async function deleteMyItem(itemId, button) {
+
+    if (!currentUser || !itemId) {
+        alert("Unable to identify this resource.");
+        return;
+    }
+
+    if (!confirm("Are you sure you want to delete this resource?")) {
+        return;
+    }
+
+    try {
+        button.disabled = true;
+        button.textContent = "Deleting...";
+
+        const itemRef = doc(db, "items", itemId);
+        const itemSnapshot = await getDoc(itemRef);
+
+        if (!itemSnapshot.exists()) {
+            throw new Error("ITEM_NOT_FOUND");
+        }
+
+        const item = itemSnapshot.data();
+
+        if (item.ownerId !== currentUser.uid) {
+            throw new Error("NOT_OWNER");
+        }
+
+        if (
+            item.available !== true ||
+            item.activeRequestId != null
+        ) {
+            throw new Error("ITEM_IN_USE");
+        }
+
+        const requestsQuery = query(
+            collection(db, "borrowRequests"),
+            where("itemId", "==", itemId),
+            where("ownerId", "==", currentUser.uid)
+        );
+
+        const requestsSnapshot = await getDocs(requestsQuery);
+
+        const activeStatuses = [
+            "pending",
+            "approved",
+            "return_requested"
+        ];
+
+        const hasActiveRequest = requestsSnapshot.docs.some(
+            requestDoc =>
+                activeStatuses.includes(
+                    requestDoc.data().status
+                )
+        );
+
+        if (hasActiveRequest) {
+            throw new Error("ACTIVE_REQUEST_EXISTS");
+        }
+
+        await deleteDoc(itemRef);
+
+        alert("Resource deleted successfully!");
+
+        await refreshDashboard();
+
+    } catch (error) {
+
+        console.error("Delete resource error:", error);
+        console.error("Delete error code:", error.code);
+        console.error("Delete error message:", error.message);
+
+        const messages = {
+            ITEM_NOT_FOUND: "Resource not found.",
+            NOT_OWNER: "You are not the owner of this resource.",
+            ITEM_IN_USE: "This resource is currently reserved or borrowed.",
+            ACTIVE_REQUEST_EXISTS:
+                "This resource has an active borrow request."
+        };
+
+        alert(
+            messages[error.message] ||
+            "Unable to delete resource. Please check Firestore permissions."
+        );
+
+    } finally {
+        button.disabled = false;
+        button.textContent = "Delete Resource";
+    }
+}
+
 
 /* =========================================
    9. LOAD MY LISTED RESOURCES
