@@ -778,6 +778,7 @@ async function deleteMyItem(itemId) {
     const requestsQuery = query(
       collection(db, "borrowRequests"),
       where("itemId", "==", itemId)
+       where("ownerId", "==", currentUser.uid)
     );
 
     const requestsSnapshot = await getDocs(requestsQuery);
