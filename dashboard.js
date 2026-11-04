@@ -1662,3 +1662,69 @@ onAuthStateChanged(auth, async (user) => {
     window.location.replace("login.html");
   }
 });
+// =====================================
+// MOBILE HAMBURGER NAVIGATION
+// =====================================
+
+const menuToggle = document.getElementById("menuToggle");
+const sidebar = document.querySelector(".sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+function openSidebar() {
+
+    sidebar.classList.add("mobile-open");
+    sidebarOverlay.classList.add("active");
+
+    menuToggle.innerHTML = "✕";
+
+    menuToggle.setAttribute("aria-expanded", "true");
+    menuToggle.setAttribute("aria-label", "Close navigation menu");
+
+}
+
+function closeSidebar() {
+
+    sidebar.classList.remove("mobile-open");
+    sidebarOverlay.classList.remove("active");
+
+    menuToggle.innerHTML = "☰";
+
+    menuToggle.setAttribute("aria-expanded", "false");
+    menuToggle.setAttribute("aria-label", "Open navigation menu");
+
+}
+
+menuToggle?.addEventListener("click", () => {
+
+    if (sidebar.classList.contains("mobile-open")) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
+
+});
+
+// Close when clicking outside sidebar
+sidebarOverlay?.addEventListener("click", closeSidebar);
+
+// Close after clicking navigation links
+sidebar?.querySelectorAll("a").forEach(link => {
+
+    link.addEventListener("click", () => {
+
+        if (window.innerWidth <= 768) {
+            closeSidebar();
+        }
+
+    });
+
+});
+
+// Close when switching to desktop
+window.addEventListener("resize", () => {
+
+    if (window.innerWidth > 768) {
+        closeSidebar();
+    }
+
+});
