@@ -1005,3 +1005,81 @@ button:disabled {
         font-size: 25px;
     }
 }
+/* =====================================
+   MOBILE HAMBURGER NAVIGATION
+===================================== */
+
+.menu-toggle {
+    display: none;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1002;
+
+    width: 45px;
+    height: 45px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: #6c45c5;
+    color: white;
+
+    font-size: 25px;
+    cursor: pointer;
+
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar-overlay {
+    display: none;
+}
+
+@media screen and (max-width: 768px) {
+
+    .menu-toggle {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+
+        width: 270px;
+        height: 100vh;
+
+        z-index: 1001;
+
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+
+        overflow-y: auto;
+    }
+
+    .sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+
+        position: fixed;
+        inset: 0;
+
+        background: rgba(0, 0, 0, 0.5);
+
+        z-index: 1000;
+    }
+
+    .dashboard-main {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+
+    .topbar {
+        padding-top: 75px;
+    }
+
+}
