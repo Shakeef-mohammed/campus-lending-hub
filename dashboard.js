@@ -1,4 +1,3 @@
-
 import { auth, db } from "./firebase-config.js";
 
 import {
@@ -203,61 +202,34 @@ function showEmptyMessage(element, message) {
 
 
 /* =========================================
-   4. DASHBOARD NAVIGATION
+   4. NAVIGATION
 ========================================= */
 
-const navigationLinks = document.querySelectorAll("[data-section]");
-const pageSections = document.querySelectorAll(".page-section");
-const pageTitle = document.getElementById("pageTitle");
+const navLinks = document.querySelectorAll("[data-section]");
+const dashboardSections = document.querySelectorAll(".dashboard-section");
 
 
-function openDashboardSection(sectionId, clickedLink = null) {
-  const targetSection = document.getElementById(sectionId);
-
-  if (!targetSection) return;
-
-  pageSections.forEach((section) => {
-    section.classList.remove("active");
+function showSection(sectionId) {
+  dashboardSections.forEach((section) => {
+    section.classList.toggle("active", section.id === sectionId);
   });
 
-  targetSection.classList.add("active");
-
-  navigationLinks.forEach((link) => {
-    link.classList.remove("active");
-  });
-
-  if (clickedLink) {
-    clickedLink.classList.add("active");
-  } else {
-    const matchingLink = document.querySelector(
-      `[data-section="${sectionId}"]`
+  navLinks.forEach((link) => {
+    link.classList.toggle(
+      "active",
+      link.dataset.section === sectionId
     );
-
-    if (matchingLink) matchingLink.classList.add("active");
-  }
-
-  const title = targetSection.dataset.title;
-
-  if (pageTitle) {
-    pageTitle.textContent =
-      title || targetSection.querySelector("h2")?.textContent || "Dashboard";
-  }
-
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
   });
 }
 
 
-navigationLinks.forEach((link) => {
-  link.addEventListener("click", (event) => {
+navLinks.forEach((link) => {
+  link.addEventListener("click", () => {
     const sectionId = link.dataset.section;
 
-    if (!sectionId) return;
-
-    event.preventDefault();
-    openDashboardSection(sectionId, link);
+    if (sectionId) {
+      showSection(sectionId);
+    }
   });
 });
 
@@ -269,115 +241,42 @@ navigationLinks.forEach((link) => {
 async function loadUserProfile() {
   if (!currentUser) return;
 
-  const userRef = doc(db, "users", currentUser.uid);
-  const userSnapshot = await getDoc(userRef);
+  try {
+    const userRef = doc(db, "users", currentUser.uid);
+    const userSnapshot = await getDoc(userRef);
 
-  const profile = userSnapshot.exists()
-    ? userSnapshot.data()
-    : {};
+    if (userSnapshot.exists()) {
+      currentProfile = userSnapshot.data();
 
-  currentProfile = profile;
+      currentUserName =
+        currentProfile.name ||
+        currentUser.displayName ||
+        "Student";
+    } else {
+      currentProfile = {};
 
-  currentUserName =
-    profile.displayName ||
-    currentUser.displayName ||
-    currentUser.email?.split("@")[0] ||
-    "Student";
+      currentUserName =
+        currentUser.displayName || "Student";
+    }
 
-  const userName = document.getElementById("userName");
-  const welcomeName = document.getElementById("welcomeName");
-  const sidebarName = document.getElementById("sidebar-name");
+    const nameElements = document.querySelectorAll(".user-name");
 
-  if (userName) userName.textContent = currentUserName;
-  if (welcomeName) welcomeName.textContent = currentUserName;
-  if (sidebarName) sidebarName.textContent = currentUserName;
+    nameElements.forEach((element) => {
+      element.textContent = currentUserName;
+    });
 
-  setProfileField("full-name", profile.displayName || currentUserName);
-  setProfileField("student-id", profile.studentId || "");
-  setProfileField("email", profile.email || currentUser.email || "");
-  setProfileField("phone", profile.contact || "");
-  setProfileField("faculty", profile.faculty || "");
-  setProfileField("department", profile.department || "");
-  setProfileField("university", profile.university || "");
-  setProfileField("academic-year", profile.academicYear || "");
-
-  const accountStatus = document.getElementById("account-status");
-
-  if (accountStatus) {
-    accountStatus.value = currentUser.emailVerified
-      ? "Verified Account"
-      : "Not Verified";
+  } catch (error) {
+    console.error("Load profile error:", error);
   }
-
-  const avatar = document.getElementById("profile-avatar");
-
-  if (avatar) {
-    avatar.textContent = currentUserName.charAt(0).toUpperCase();
-  }
-}
-
-
-function setProfileField(id, value) {
-  const field = document.getElementById(id);
-
-  if (field) field.value = value;
 }
 
 
 /* =========================================
-   6. PROFILE EDITING
+   6. UPDATE USER PROFILE
 ========================================= */
 
-const profileForm = document.getElementById("profile-form");
-const editProfileButton = document.getElementById("edit-profile-button");
-const cancelEditButton = document.getElementById("cancel-edit-button");
-const formActions = document.getElementById("form-actions");
-const profileMessage = document.getElementById("profile-message");
-
-
-function setProfileEditing(enabled) {
-  const editableFields = [
-    "full-name",
-    "phone",
-    "faculty",
-    "department",
-    "university",
-    "academic-year"
-  ];
-
-  editableFields.forEach((id) => {
-    const field = document.getElementById(id);
-
-    if (field) field.disabled = !enabled;
-  });
-
-  if (editProfileButton) {
-    editProfileButton.style.display = enabled ? "none" : "inline-block";
-  }
-
-  if (formActions) {
-    formActions.style.display = enabled ? "flex" : "none";
-  }
-}
-
-
-if (editProfileButton) {
-  editProfileButton.addEventListener("click", () => {
-    if (profileMessage) profileMessage.textContent = "";
-
-    setProfileEditing(true);
-  });
-}
-
-
-if (cancelEditButton) {
-  cancelEditButton.addEventListener("click", async () => {
-    await loadUserProfile();
-    setProfileEditing(false);
-
-    if (profileMessage) profileMessage.textContent = "";
-  });
-}
+const profileForm = document.getElementById("profileForm");
+const profileMessage = document.getElementById("profileMessage");
 
 
 if (profileForm) {
@@ -386,48 +285,42 @@ if (profileForm) {
 
     if (!currentUser) return;
 
-    const fullName = document.getElementById("full-name")?.value.trim();
-    const phone = document.getElementById("phone")?.value.trim();
-    const faculty = document.getElementById("faculty")?.value.trim();
-    const department = document.getElementById("department")?.value.trim();
-    const university = document.getElementById("university")?.value.trim();
-    const academicYear = document.getElementById("academic-year")?.value.trim();
+    const name =
+      document.getElementById("profileName")?.value.trim();
 
-    if (!fullName) {
-      showMessage(profileMessage, "Please enter your full name.", "error");
+    if (!name) {
+      showMessage(
+        profileMessage,
+        "Please enter your name.",
+        "error"
+      );
       return;
     }
 
-    const saveButton = profileForm.querySelector('button[type="submit"]');
-
-    setButtonLoading(saveButton, true, "Saving...");
-
     try {
-      const userRef = doc(db, "users", currentUser.uid);
+      const profileButton =
+        profileForm.querySelector('button[type="submit"]');
 
-      await updateDoc(userRef, {
-        displayName: fullName,
-        contact: phone,
-        faculty,
-        department,
-        university,
-        academicYear,
+      setButtonLoading(profileButton, true, "Updating...");
+
+      await updateProfile(currentUser, {
+        displayName: name
+      });
+
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        name,
         updatedAt: serverTimestamp()
       });
 
-      await updateProfile(currentUser, {
-        displayName: fullName
+      currentUserName = name;
+
+      document.querySelectorAll(".user-name").forEach((element) => {
+        element.textContent = name;
       });
-
-      currentUserName = fullName;
-
-      await loadUserProfile();
-
-      setProfileEditing(false);
 
       showMessage(
         profileMessage,
-        "Your profile has been updated successfully.",
+        "Profile updated successfully!",
         "success"
       );
 
@@ -436,19 +329,22 @@ if (profileForm) {
 
       showMessage(
         profileMessage,
-        "Unable to update your profile. Please try again.",
+        error.message || "Unable to update profile.",
         "error"
       );
 
     } finally {
-      setButtonLoading(saveButton, false);
+      const profileButton =
+        profileForm.querySelector('button[type="submit"]');
+
+      setButtonLoading(profileButton, false);
     }
   });
 }
 
 
 /* =========================================
-   7. LOAD BORROW REQUESTS RECEIVED
+   7. LOAD RECEIVED BORROW REQUESTS
 ========================================= */
 
 async function loadReceivedRequests() {
@@ -462,61 +358,31 @@ async function loadReceivedRequests() {
 
     const snapshot = await getDocs(requestsQuery);
 
-    if (snapshot.empty) {
-      showEmptyMessage(
-        requestsList,
-        "You have not received any borrow requests yet."
-      );
-      return;
-    }
-
     const requests = snapshot.docs.map((document) => ({
       id: document.id,
       ...document.data()
     }));
 
-    requests.sort(
-      (a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt)
+    const pendingRequests = requests.filter(
+      (request) => request.status === "pending"
     );
 
-    requestsList.innerHTML = requests.map((request) => {
-      const status = request.status || "pending";
+    if (pendingRequests.length === 0) {
+      showEmptyMessage(
+        requestsList,
+        "You have no pending borrow requests."
+      );
+      return;
+    }
 
-      let actionButtons = "";
-
-      if (status === "pending") {
-        actionButtons = `
-          <button class="btn btn-primary"
-                  data-action="accept"
-                  data-request-id="${escapeHTML(request.id)}">
-            Accept
-          </button>
-
-          <button class="btn btn-danger"
-                  data-action="reject"
-                  data-request-id="${escapeHTML(request.id)}">
-            Reject
-          </button>
-        `;
-      }
-
-      if (status === "return_requested") {
-        actionButtons = `
-          <button class="btn btn-primary"
-                  data-action="confirm-return"
-                  data-request-id="${escapeHTML(request.id)}">
-            Confirm Return
-          </button>
-        `;
-      }
-
+    requestsList.innerHTML = pendingRequests.map((request) => {
       return `
         <div class="request-card">
           <div class="request-card-header">
             <h3>${escapeHTML(request.itemName || "Resource")}</h3>
 
-            <span class="status-badge ${statusClass(status)}">
-              ${escapeHTML(formatStatus(status))}
+            <span class="status-badge pending">
+              Pending
             </span>
           </div>
 
@@ -524,13 +390,28 @@ async function loadReceivedRequests() {
             ${escapeHTML(request.borrowerName || "Student")}
           </p>
 
-          <p><strong>Start Date:</strong> ${formatDate(request.startDate)}</p>
-          <p><strong>End Date:</strong> ${formatDate(request.endDate)}</p>
-          <p><strong>Requested On:</strong> ${formatDate(request.createdAt)}</p>
+          <p><strong>Start Date:</strong>
+            ${formatDate(request.startDate)}
+          </p>
+
+          <p><strong>End Date:</strong>
+            ${formatDate(request.endDate)}
+          </p>
 
           <div class="card-actions">
             ${createChatLink(request.id)}
-            ${actionButtons}
+
+            <button class="btn btn-primary"
+                    data-action="approve"
+                    data-request-id="${escapeHTML(request.id)}">
+              Accept
+            </button>
+
+            <button class="btn btn-danger"
+                    data-action="reject"
+                    data-request-id="${escapeHTML(request.id)}">
+              Reject
+            </button>
           </div>
         </div>
       `;
@@ -548,10 +429,10 @@ async function loadReceivedRequests() {
 
 
 /* =========================================
-   8. ACCEPT / REJECT BORROW REQUEST
+   8. APPROVE BORROW REQUEST
 ========================================= */
 
-async function updateBorrowRequest(requestId, action) {
+async function approveRequest(requestId) {
   if (!currentUser) return;
 
   try {
@@ -560,17 +441,17 @@ async function updateBorrowRequest(requestId, action) {
       const requestSnapshot = await transaction.get(requestRef);
 
       if (!requestSnapshot.exists()) {
-        throw new Error("Borrow request not found.");
+        throw new Error("Request not found.");
       }
 
       const request = requestSnapshot.data();
 
       if (request.ownerId !== currentUser.uid) {
-        throw new Error("You are not allowed to update this request.");
+        throw new Error("You are not allowed to approve this request.");
       }
 
       if (request.status !== "pending") {
-        throw new Error("This request has already been processed.");
+        throw new Error("This request is no longer pending.");
       }
 
       const itemRef = doc(db, "items", request.itemId);
@@ -582,82 +463,86 @@ async function updateBorrowRequest(requestId, action) {
 
       const item = itemSnapshot.data();
 
-      if (item.ownerId !== currentUser.uid) {
-        throw new Error("You do not own this resource.");
+      if (!item.available || item.isArchived) {
+        throw new Error("This resource is not available.");
       }
 
-      if (item.isArchived === true) {
-        throw new Error("This resource has been archived.");
-      }
+      transaction.update(requestRef, {
+        status: "approved",
+        approvedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
 
-      if (action === "accept") {
-        if (
-          item.activeRequestId &&
-          item.activeRequestId !== requestId
-        ) {
-          const activeRequestRef = doc(
-            db,
-            "borrowRequests",
-            item.activeRequestId
-          );
-
-          const activeRequestSnapshot = await transaction.get(
-            activeRequestRef
-          );
-
-          if (activeRequestSnapshot.exists()) {
-            const activeRequest = activeRequestSnapshot.data();
-
-            if (
-              activeRequest.status === "approved" ||
-              activeRequest.status === "return_requested"
-            ) {
-              throw new Error(
-                "This resource is already borrowed by another student."
-              );
-            }
-          }
-        }
-
-        transaction.update(requestRef, {
-          status: "approved",
-          updatedAt: serverTimestamp()
-        });
-
-        transaction.update(itemRef, {
-          available: false,
-          activeRequestId: requestId,
-          updatedAt: serverTimestamp()
-        });
-
-      } else if (action === "reject") {
-        transaction.update(requestRef, {
-          status: "rejected",
-          updatedAt: serverTimestamp()
-        });
-
-      } else {
-        throw new Error("Invalid request action.");
-      }
+      transaction.update(itemRef, {
+        available: false,
+        activeRequestId: requestId,
+        updatedAt: serverTimestamp()
+      });
     });
 
-    alert(
-      action === "accept"
-        ? "Borrow request accepted."
-        : "Borrow request rejected."
-    );
+    alert("Borrow request approved successfully!");
 
     await refreshDashboard();
 
   } catch (error) {
-    console.error("Request update error:", error);
-    alert(error.message || "Unable to update the request.");
+    console.error("Approve request error:", error);
+    alert(error.message || "Unable to approve request.");
   }
 }
 
 
 /* =========================================
-   9. LOAD MY LISTED RESOURCES
+   9. REJECT BORROW REQUEST
+========================================= */
+
+async function rejectRequest(requestId) {
+  if (!currentUser) return;
+
+  const confirmed = confirm(
+    "Are you sure you want to reject this borrow request?"
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await runTransaction(db, async (transaction) => {
+      const requestRef = doc(db, "borrowRequests", requestId);
+      const requestSnapshot = await transaction.get(requestRef);
+
+      if (!requestSnapshot.exists()) {
+        throw new Error("Request not found.");
+      }
+
+      const request = requestSnapshot.data();
+
+      if (request.ownerId !== currentUser.uid) {
+        throw new Error("You are not allowed to reject this request.");
+      }
+
+      if (request.status !== "pending") {
+        throw new Error("This request is no longer pending.");
+      }
+
+      transaction.update(requestRef, {
+        status: "rejected",
+        rejectedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    alert("Borrow request rejected.");
+
+    await refreshDashboard();
+
+  } catch (error) {
+    console.error("Reject request error:", error);
+    alert(error.message || "Unable to reject request.");
+  }
+}
+
+
+/* =========================================
+   10. LOAD MY ITEMS
 ========================================= */
 
 async function loadMyItems() {
@@ -671,205 +556,83 @@ async function loadMyItems() {
 
     const snapshot = await getDocs(itemsQuery);
 
-    const items = snapshot.docs
-      .map((document) => ({
-        id: document.id,
-        ...document.data()
-      }))
-      .filter((item) => item.isArchived !== true);
+    const items = snapshot.docs.map((document) => ({
+      id: document.id,
+      ...document.data()
+    }));
 
     if (items.length === 0) {
       showEmptyMessage(
         itemsList,
-        "You have not listed any active resources yet."
+        "You have not added any resources yet."
       );
       return;
     }
 
-    items.sort(
-      (a, b) => getTimestamp(b.createdAt) - getTimestamp(a.createdAt)
-    );
-
     itemsList.innerHTML = items.map((item) => {
-      const available = item.available !== false;
+      const availability = item.available
+        ? "Available"
+        : "Unavailable";
 
       return `
         <div class="item-card">
-          <div class="item-card-header">
-            <span class="item-icon">
-              ${getItemIcon(item.category)}
-            </span>
-
-            <span class="status-badge ${available ? "approved" : "pending"}">
-              ${available ? "Available" : "Borrowed"}
-            </span>
+          <div class="item-icon">
+            ${getItemIcon(item.category)}
           </div>
 
-          <h3>${escapeHTML(item.name || "Untitled Resource")}</h3>
+          <div class="item-details">
+            <h3>${escapeHTML(item.name || "Resource")}</h3>
 
-          <p><strong>Category:</strong>
-            ${escapeHTML(item.category || "Other")}
-          </p>
+            <p><strong>Category:</strong>
+              ${escapeHTML(item.category || "Other")}
+            </p>
 
-          <p><strong>Location:</strong>
-            ${escapeHTML(item.location || "Not specified")}
-          </p>
+            <p><strong>Condition:</strong>
+              ${escapeHTML(item.condition || "Good")}
+            </p>
 
-          <div class="card-actions">
-            <a class="btn btn-secondary"
-               href="item-details.html?item=${encodeURIComponent(item.id)}">
-              View Resource
-            </a>
+            <p><strong>Location:</strong>
+              ${escapeHTML(item.location || "Not specified")}
+            </p>
 
-            <button class="btn btn-danger"
-                    data-action="delete-item"
-                    data-item-id="${escapeHTML(item.id)}">
-              Remove Resource
-            </button>
+            <p><strong>Fee:</strong>
+              ${escapeHTML(item.fee ?? 0)}
+            </p>
+
+            <p><strong>Maximum Duration:</strong>
+              ${escapeHTML(item.maxDuration ?? 0)} days
+            </p>
+
+            <p><strong>Status:</strong>
+              ${availability}
+            </p>
+
+            <p>${escapeHTML(item.description || "")}</p>
+
+            <div class="card-actions">
+              ${
+                item.isArchived
+                  ? `<span class="status-badge pending">Archived</span>`
+                  : `
+                    <button class="btn btn-danger"
+                            data-action="archive-item"
+                            data-item-id="${escapeHTML(item.id)}">
+                      Archive Resource
+                    </button>
+                  `
+              }
+            </div>
           </div>
         </div>
       `;
     }).join("");
 
   } catch (error) {
-    console.error("My items error:", error);
+    console.error("Load my items error:", error);
 
     showEmptyMessage(
       itemsList,
-      "Unable to load your listed resources."
-    );
-  }
-}
-
-
-/* =========================================
-   10. ARCHIVE / REMOVE MY RESOURCE
-========================================= */
-
-async function deleteMyItem(itemId) {
-  if (!currentUser || !itemId) return;
-
-  const confirmed = confirm(
-    "Remove this resource from your active listings?\n\n" +
-    "If someone has borrowed it, the borrowing record will be kept " +
-    "until the return is completed."
-  );
-
-  if (!confirmed) return;
-
-  try {
-    const itemRef = doc(db, "items", itemId);
-
-    const initialItemSnapshot = await getDoc(itemRef);
-
-    if (!initialItemSnapshot.exists()) {
-      throw new Error("Resource not found.");
-    }
-
-    const initialItem = initialItemSnapshot.data();
-
-    if (initialItem.ownerId !== currentUser.uid) {
-      throw new Error("You are not allowed to remove this resource.");
-    }
-
-    if (initialItem.isArchived === true) {
-      throw new Error("This resource has already been removed.");
-    }
-
-    // FIXED: Both where() conditions must be separated by a comma.
-    const requestsQuery = query(
-      collection(db, "borrowRequests"),
-      where("itemId", "==", itemId),
-      where("ownerId", "==", currentUser.uid)
-    );
-
-    const requestsSnapshot = await getDocs(requestsQuery);
-
-    const requestRefs = requestsSnapshot.docs.map((document) =>
-      doc(db, "borrowRequests", document.id)
-    );
-
-    await runTransaction(db, async (transaction) => {
-      const itemSnapshot = await transaction.get(itemRef);
-
-      if (!itemSnapshot.exists()) {
-        throw new Error("Resource not found.");
-      }
-
-      const item = itemSnapshot.data();
-
-      if (item.ownerId !== currentUser.uid) {
-        throw new Error("You are not allowed to remove this resource.");
-      }
-
-      if (item.isArchived === true) {
-        throw new Error("This resource has already been removed.");
-      }
-
-      // Read all request documents before writing.
-      const requestSnapshots = [];
-
-      for (const requestRef of requestRefs) {
-        const requestSnapshot = await transaction.get(requestRef);
-
-        if (requestSnapshot.exists()) {
-          requestSnapshots.push({
-            ref: requestRef,
-            data: requestSnapshot.data()
-          });
-        }
-      }
-
-      // Find active borrowing requests.
-      const activeRequests = requestSnapshots.filter(({ data }) => {
-        return (
-          data.status === "approved" ||
-          data.status === "return_requested"
-        );
-      });
-
-      if (activeRequests.length > 1) {
-        throw new Error(
-          "Multiple active borrowings were found. Please check the requests first."
-        );
-      }
-
-      // Reject pending requests.
-      requestSnapshots.forEach(({ ref, data }) => {
-        if (data.status === "pending") {
-          transaction.update(ref, {
-            status: "rejected",
-            updatedAt: serverTimestamp()
-          });
-        }
-      });
-
-      // Preserve an active borrowing request.
-      const activeRequestId = activeRequests.length === 1
-        ? activeRequests[0].ref.id
-        : null;
-
-      // Archive the resource instead of permanently deleting it.
-      transaction.update(itemRef, {
-        isArchived: true,
-        archivedAt: serverTimestamp(),
-        available: false,
-        activeRequestId: activeRequestId,
-        updatedAt: serverTimestamp()
-      });
-    });
-
-    alert(
-      "Resource removed from your active listings successfully."
-    );
-
-    await refreshDashboard();
-
-  } catch (error) {
-    console.error("Remove resource error:", error);
-
-    alert(
-      error.message || "Unable to remove this resource."
+      "Unable to load your resources."
     );
   }
 }
@@ -889,14 +652,6 @@ async function loadMyRequests() {
     );
 
     const snapshot = await getDocs(requestsQuery);
-
-    if (snapshot.empty) {
-      showEmptyMessage(
-        myRequestsList,
-        "You have not made any borrow requests yet."
-      );
-      return;
-    }
 
     const requests = snapshot.docs.map((document) => ({
       id: document.id,
@@ -1080,22 +835,21 @@ async function requestReturn(requestId) {
     await refreshDashboard();
 
   } catch (error) {
-    console.error("Return request error:", error);
-
+    console.error("Request return error:", error);
     alert(error.message || "Unable to request return.");
   }
 }
 
 
 /* =========================================
-   14. CONFIRM RETURN
+   14. CONFIRM RESOURCE RETURN
 ========================================= */
 
 async function confirmReturn(requestId) {
   if (!currentUser) return;
 
   const confirmed = confirm(
-    "Confirm that the resource has been returned?"
+    "Has the resource been returned successfully?"
   );
 
   if (!confirmed) return;
@@ -1116,7 +870,7 @@ async function confirmReturn(requestId) {
       }
 
       if (request.status !== "return_requested") {
-        throw new Error("This return request is no longer active.");
+        throw new Error("This return request is not ready for confirmation.");
       }
 
       const itemRef = doc(db, "items", request.itemId);
@@ -1126,15 +880,6 @@ async function confirmReturn(requestId) {
         throw new Error("Resource not found.");
       }
 
-      const item = itemSnapshot.data();
-
-      if (
-        item.ownerId !== currentUser.uid ||
-        item.activeRequestId !== requestId
-      ) {
-        throw new Error("Resource ownership or request details do not match.");
-      }
-
       transaction.update(requestRef, {
         status: "returned",
         returnedAt: serverTimestamp(),
@@ -1142,129 +887,68 @@ async function confirmReturn(requestId) {
       });
 
       transaction.update(itemRef, {
-        available: item.isArchived === true ? false : true,
+        available: true,
         activeRequestId: null,
         updatedAt: serverTimestamp()
       });
     });
 
-    alert("Return confirmed successfully.");
+    alert("Resource return confirmed.");
 
     await refreshDashboard();
 
   } catch (error) {
     console.error("Confirm return error:", error);
-
     alert(error.message || "Unable to confirm return.");
   }
 }
 
 
 /* =========================================
-   15. LOAD HISTORY
+   15. ARCHIVE RESOURCE
 ========================================= */
 
-async function loadHistory() {
-  if (!currentUser || !historyList) return;
+async function archiveItem(itemId) {
+  if (!currentUser) return;
+
+  const confirmed = confirm(
+    "Are you sure you want to archive this resource?"
+  );
+
+  if (!confirmed) return;
 
   try {
-    const borrowerQuery = query(
-      collection(db, "borrowRequests"),
-      where("borrowerId", "==", currentUser.uid)
-    );
+    const itemRef = doc(db, "items", itemId);
+    const itemSnapshot = await getDoc(itemRef);
 
-    const ownerQuery = query(
-      collection(db, "borrowRequests"),
-      where("ownerId", "==", currentUser.uid)
-    );
-
-    const [borrowerSnapshot, ownerSnapshot] = await Promise.all([
-      getDocs(borrowerQuery),
-      getDocs(ownerQuery)
-    ]);
-
-    const requestMap = new Map();
-
-    borrowerSnapshot.docs.forEach((document) => {
-      requestMap.set(document.id, {
-        id: document.id,
-        ...document.data()
-      });
-    });
-
-    ownerSnapshot.docs.forEach((document) => {
-      requestMap.set(document.id, {
-        id: document.id,
-        ...document.data()
-      });
-    });
-
-    const history = Array.from(requestMap.values()).filter((request) => {
-      return [
-        "returned",
-        "rejected"
-      ].includes(request.status);
-    });
-
-    history.sort((a, b) => {
-      const aDate = getTimestamp(a.updatedAt || a.createdAt);
-      const bDate = getTimestamp(b.updatedAt || b.createdAt);
-
-      return bDate - aDate;
-    });
-
-    if (history.length === 0) {
-      showEmptyMessage(
-        historyList,
-        "Your borrowing history is empty."
-      );
-      return;
+    if (!itemSnapshot.exists()) {
+      throw new Error("Resource not found.");
     }
 
-    historyList.innerHTML = history.map((request) => {
-      const isOwner = request.ownerId === currentUser.uid;
+    const item = itemSnapshot.data();
 
-      return `
-        <div class="request-card">
-          <div class="request-card-header">
-            <h3>${escapeHTML(request.itemName || "Resource")}</h3>
+    if (item.ownerId !== currentUser.uid) {
+      throw new Error("You are not allowed to archive this resource.");
+    }
 
-            <span class="status-badge ${statusClass(request.status)}">
-              ${escapeHTML(formatStatus(request.status))}
-            </span>
-          </div>
+    if (item.available === false) {
+      throw new Error(
+        "This resource cannot be archived while it is borrowed."
+      );
+    }
 
-          <p><strong>Role:</strong>
-            ${isOwner ? "Resource Owner" : "Borrower"}
-          </p>
+    await updateDoc(itemRef, {
+      isArchived: true,
+      updatedAt: serverTimestamp()
+    });
 
-          <p>
-            <strong>${isOwner ? "Borrower:" : "Owner:"}</strong>
-            ${escapeHTML(
-              isOwner
-                ? request.borrowerName || "Student"
-                : request.ownerName || "Student"
-            )}
-          </p>
+    alert("Resource archived successfully.");
 
-          <p><strong>Completed / Updated:</strong>
-            ${formatDate(request.updatedAt || request.createdAt)}
-          </p>
-
-          <div class="card-actions">
-            ${createChatLink(request.id)}
-          </div>
-        </div>
-      `;
-    }).join("");
+    await refreshDashboard();
 
   } catch (error) {
-    console.error("History error:", error);
-
-    showEmptyMessage(
-      historyList,
-      "Unable to load your history."
-    );
+    console.error("Archive item error:", error);
+    alert(error.message || "Unable to archive resource.");
   }
 }
 
@@ -1272,6 +956,7 @@ async function loadHistory() {
 /* =========================================
    16. ADD NEW RESOURCE
 ========================================= */
+
 async function handleAddItem(event) {
   event.preventDefault();
 
@@ -1295,13 +980,63 @@ async function handleAddItem(event) {
 
   const name = document.getElementById("itemName")?.value.trim();
   const category = document.getElementById("itemCategory")?.value;
+  const condition = document.getElementById("itemCondition")?.value;
   const description = document.getElementById("itemDescription")?.value.trim();
+  const availability = document.getElementById("itemAvailability")?.value;
+  const feeValue = document.getElementById("itemFee")?.value;
+  const maxDaysValue = document.getElementById("itemMaxDays")?.value;
   const location = document.getElementById("itemLocation")?.value.trim();
+  const ownershipConfirmed =
+    document.getElementById("itemConfirmOwnership")?.checked;
 
-  if (!name || !category || !description || !location) {
+  if (
+    !name ||
+    !category ||
+    !condition ||
+    !description ||
+    !availability ||
+    feeValue === undefined ||
+    feeValue === null ||
+    feeValue === "" ||
+    maxDaysValue === undefined ||
+    maxDaysValue === null ||
+    maxDaysValue === "" ||
+    !location ||
+    !ownershipConfirmed
+  ) {
     showMessage(
       itemFormMessage,
-      "Please complete all required fields.",
+      "Please complete all required fields and confirm resource ownership.",
+      "error"
+    );
+    return;
+  }
+
+  const fee = Number(feeValue);
+  const maxDuration = Number(maxDaysValue);
+
+  if (!Number.isFinite(fee) || fee < 0) {
+    showMessage(
+      itemFormMessage,
+      "Please enter a valid non-negative fee.",
+      "error"
+    );
+    return;
+  }
+
+  if (!Number.isInteger(maxDuration) || maxDuration <= 0) {
+    showMessage(
+      itemFormMessage,
+      "Please select a valid maximum borrowing duration.",
+      "error"
+    );
+    return;
+  }
+
+  if (!["Available", "Unavailable"].includes(availability)) {
+    showMessage(
+      itemFormMessage,
+      "Please select a valid availability status.",
       "error"
     );
     return;
@@ -1321,17 +1056,17 @@ async function handleAddItem(event) {
     await addDoc(collection(db, "items"), {
       name,
       category,
+      condition,
       description,
       location,
 
-      condition: "Good",
-      fee: 0,
-      maxDuration: 0,
+      fee,
+      maxDuration,
 
       ownerId: currentUser.uid,
       ownerName: currentUserName,
 
-      available: true,
+      available: availability === "Available",
       activeRequestId: null,
       isArchived: false,
 
@@ -1354,7 +1089,7 @@ async function handleAddItem(event) {
 
     showMessage(
       itemFormMessage,
-      error.message || "Unable to add resource.",
+      error.message || "Unable to add this resource.",
       "error"
     );
 
@@ -1366,13 +1101,16 @@ async function handleAddItem(event) {
 
 if (addItemForm) {
   addItemForm.addEventListener("submit", handleAddItem);
-} 
+}
+
 
 /* =========================================
-   17. DASHBOARD REFRESH
+   17. REFRESH DASHBOARD
 ========================================= */
 
 async function refreshDashboard() {
+  if (!currentUser) return;
+
   await Promise.all([
     loadReceivedRequests(),
     loadMyItems(),
@@ -1384,7 +1122,107 @@ async function refreshDashboard() {
 
 
 /* =========================================
-   18. ACTION BUTTON EVENT HANDLER
+   18. LOAD HISTORY
+========================================= */
+
+async function loadHistory() {
+  if (!currentUser || !historyList) return;
+
+  try {
+    const requestsQuery = query(
+      collection(db, "borrowRequests"),
+      where("ownerId", "==", currentUser.uid)
+    );
+
+    const borrowerQuery = query(
+      collection(db, "borrowRequests"),
+      where("borrowerId", "==", currentUser.uid)
+    );
+
+    const [ownerSnapshot, borrowerSnapshot] = await Promise.all([
+      getDocs(requestsQuery),
+      getDocs(borrowerQuery)
+    ]);
+
+    const historyMap = new Map();
+
+    ownerSnapshot.docs.forEach((document) => {
+      historyMap.set(document.id, {
+        id: document.id,
+        ...document.data()
+      });
+    });
+
+    borrowerSnapshot.docs.forEach((document) => {
+      historyMap.set(document.id, {
+        id: document.id,
+        ...document.data()
+      });
+    });
+
+    const history = Array.from(historyMap.values()).filter((request) => {
+      return [
+        "rejected",
+        "returned"
+      ].includes(request.status);
+    });
+
+    history.sort(
+      (a, b) => getTimestamp(b.updatedAt) - getTimestamp(a.updatedAt)
+    );
+
+    if (history.length === 0) {
+      showEmptyMessage(
+        historyList,
+        "No borrowing history available."
+      );
+      return;
+    }
+
+    historyList.innerHTML = history.map((request) => {
+      const otherPerson =
+        request.ownerId === currentUser.uid
+          ? request.borrowerName
+          : request.ownerName;
+
+      return `
+        <div class="request-card">
+          <div class="request-card-header">
+            <h3>${escapeHTML(request.itemName || "Resource")}</h3>
+
+            <span class="status-badge ${statusClass(request.status)}">
+              ${escapeHTML(formatStatus(request.status))}
+            </span>
+          </div>
+
+          <p><strong>Other User:</strong>
+            ${escapeHTML(otherPerson || "Student")}
+          </p>
+
+          <p><strong>Updated:</strong>
+            ${formatDate(request.updatedAt)}
+          </p>
+
+          <div class="card-actions">
+            ${createChatLink(request.id)}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("History error:", error);
+
+    showEmptyMessage(
+      historyList,
+      "Unable to load borrowing history."
+    );
+  }
+}
+
+
+/* =========================================
+   19. EVENT DELEGATION
 ========================================= */
 
 document.addEventListener("click", async (event) => {
@@ -1399,34 +1237,25 @@ document.addEventListener("click", async (event) => {
   button.disabled = true;
 
   try {
-    switch (action) {
-      case "accept":
-        await updateBorrowRequest(requestId, "accept");
-        break;
-
-      case "reject":
-        await updateBorrowRequest(requestId, "reject");
-        break;
-
-      case "request-return":
-        await requestReturn(requestId);
-        break;
-
-      case "confirm-return":
-        await confirmReturn(requestId);
-        break;
-
-      case "delete-item":
-        await deleteMyItem(itemId);
-        break;
-
-      default:
-        console.warn("Unknown dashboard action:", action);
+    if (action === "approve" && requestId) {
+      await approveRequest(requestId);
     }
 
-  } catch (error) {
-    console.error("Action button error:", error);
-    alert(error.message || "Unable to complete this action.");
+    if (action === "reject" && requestId) {
+      await rejectRequest(requestId);
+    }
+
+    if (action === "request-return" && requestId) {
+      await requestReturn(requestId);
+    }
+
+    if (action === "confirm-return" && requestId) {
+      await confirmReturn(requestId);
+    }
+
+    if (action === "archive-item" && itemId) {
+      await archiveItem(itemId);
+    }
 
   } finally {
     button.disabled = false;
@@ -1435,73 +1264,42 @@ document.addEventListener("click", async (event) => {
 
 
 /* =========================================
-   19. LOGOUT
+   20. LOGOUT
 ========================================= */
 
 if (logoutButton) {
   logoutButton.addEventListener("click", async () => {
-    logoutButton.disabled = true;
-    logoutButton.textContent = "Logging out...";
+    const confirmed = confirm(
+      "Are you sure you want to log out?"
+    );
+
+    if (!confirmed) return;
 
     try {
       await signOut(auth);
-
-      window.location.replace("login.html");
+      window.location.href = "login.html";
 
     } catch (error) {
       console.error("Logout error:", error);
-
       alert("Unable to log out. Please try again.");
-
-      logoutButton.disabled = false;
-      logoutButton.textContent = "Logout";
     }
   });
 }
 
 
 /* =========================================
-   20. BROWSER BACK / CACHE PROTECTION
-========================================= */
-
-window.addEventListener("pageshow", async (event) => {
-  if (!event.persisted) return;
-
-  await authStateReady;
-
-  if (!auth.currentUser) {
-    window.location.replace("login.html");
-  } else {
-    window.location.reload();
-  }
-});
-
-
-/* =========================================
-   21. FIREBASE AUTHENTICATION CHECK
+   21. AUTH STATE
 ========================================= */
 
 onAuthStateChanged(auth, async (user) => {
-  authReadyResolve();
+  currentUser = user;
 
   if (!user) {
-    currentUser = null;
-    window.location.replace("login.html");
+    window.location.href = "login.html";
     return;
   }
 
   try {
-    await user.reload();
-    await user.getIdToken(true);
-
-    currentUser = auth.currentUser;
-
-    if (!currentUser || !currentUser.emailVerified) {
-      await signOut(auth);
-      window.location.replace("login.html");
-      return;
-    }
-
     await loadUserProfile();
 
     await refreshDashboard();
@@ -1509,12 +1307,22 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) {
     console.error("Dashboard initialization error:", error);
 
-    alert(
-      "Unable to load your dashboard. Please log in again."
-    );
+  } finally {
+    authReadyResolve();
+  }
+});
 
-    await signOut(auth);
 
-    window.location.replace("login.html");
+/* =========================================
+   22. PAGE LOAD PROTECTION
+========================================= */
+
+window.addEventListener("pageshow", async (event) => {
+  if (event.persisted) {
+    await authStateReady;
+
+    if (!auth.currentUser) {
+      window.location.href = "login.html";
+    }
   }
 });
