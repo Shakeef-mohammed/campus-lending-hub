@@ -1272,58 +1272,101 @@ async function loadHistory() {
 /* =========================================
    16. ADD NEW RESOURCE
 ========================================= */
+async function handleAddItem(event) {
+  event.preventDefault();
 
-import { initResourceForm } from "./resource-form.js";
+  if (!currentUser) {
+    showMessage(
+      itemFormMessage,
+      "Please log in to add a resource.",
+      "error"
+    );
+    return;
+  }
 
-initResourceForm({
+  if (!currentUser.emailVerified) {
+    showMessage(
+      itemFormMessage,
+      "Please verify your email before adding a resource.",
+      "error"
+    );
+    return;
+  }
 
-    formId: "resourceForm",
+  const name = document.getElementById("itemName")?.value.trim();
+  const category = document.getElementById("itemCategory")?.value;
+  const description = document.getElementById("itemDescription")?.value.trim();
+  const location = document.getElementById("itemLocation")?.value.trim();
 
-    buttonId: "submitButton",
+  if (!name || !category || !description || !location) {
+    showMessage(
+      itemFormMessage,
+      "Please complete all required fields.",
+      "error"
+    );
+    return;
+  }
 
-    messageId: "formMessage",
+  setButtonLoading(addItemButton, true, "Adding Resource...");
 
-    buttonText: "Submit Resource →",
+  try {
+    await currentUser.reload();
 
-    redirectToLogin: true,
+    currentUser = auth.currentUser;
 
-    fields: {
-
-        name: "resourceName",
-
-        category: "category",
-
-        condition: "condition",
-
-        description: "description",
-
-        availability: "availability",
-
-        fee: "fee",
-
-        maxDuration: "maxDays",
-
-        location: "location",
-
-        ownership: "confirmOwnership"
-
-    },
-
-    onSuccess: async () => {
-
-        window.setTimeout(() => {
-
-            window.location.href = "dashboard.html";
-
-        }, 1500);
-
+    if (!currentUser || !currentUser.emailVerified) {
+      throw new Error("Please verify your email before adding a resource.");
     }
 
-});
+    await addDoc(collection(db, "items"), {
+      name,
+      category,
+      description,
+      location,
+
+      condition: "Good",
+      fee: 0,
+      maxDuration: 0,
+
+      ownerId: currentUser.uid,
+      ownerName: currentUserName,
+
+      available: true,
+      activeRequestId: null,
+      isArchived: false,
+
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    addItemForm.reset();
+
+    showMessage(
+      itemFormMessage,
+      "Resource added successfully!",
+      "success"
+    );
+
+    await refreshDashboard();
+
+  } catch (error) {
+    console.error("Add resource error:", error);
+
+    showMessage(
+      itemFormMessage,
+      error.message || "Unable to add resource.",
+      "error"
+    );
+
+  } finally {
+    setButtonLoading(addItemButton, false);
+  }
+}
 
 
- 
-  
+if (addItemForm) {
+  addItemForm.addEventListener("submit", handleAddItem);
+} 
 
 /* =========================================
    17. DASHBOARD REFRESH
