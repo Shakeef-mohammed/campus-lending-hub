@@ -24,15 +24,37 @@ let allResources = [];
 let selectedCategory = params.get("category") || "all";
 let searchTerm = params.get("search") || "";
 
+// =====================================
+// ALLOWED CATEGORIES
+// =====================================
+
+const categories = [
+  "Textbooks",
+  "Calculators",
+  "Laptops",
+  "Cameras",
+  "Sports Equipments",
+  "Accessories",
+  "Others"
+];
+
+// =====================================
+// CATEGORY ICONS
+// =====================================
+
 const categoryIcons = {
-  Books: "📚",
-  Electronics: "💻",
-  Photography: "📷",
-  Sports: "⚽",
-  Tools: "🛠️",
-  Stationery: "✏️",
-  Other: "📦"
+  "Textbooks": "📚",
+  "Calculators": "🧮",
+  "Laptops": "💻",
+  "Cameras": "📷",
+  "Sports Equipments": "⚽",
+  "Accessories": "🎧",
+  "Others": "📦"
 };
+
+// =====================================
+// HELPER FUNCTIONS
+// =====================================
 
 function escapeHTML(value = "") {
   return String(value).replace(/[&<>"']/g, character => ({
@@ -52,6 +74,13 @@ function formatFee(fee) {
     : `Rs. ${amount.toLocaleString("en-LK")}`;
 }
 
+function normalize(value = "") {
+  return String(value)
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 function showBrowseMessage(message) {
   if (!browseMessage) return;
 
@@ -66,16 +95,24 @@ function hideBrowseMessage() {
   browseMessage.style.display = "none";
 }
 
+// =====================================
+// CATEGORY BUTTONS
+// =====================================
+
 function updateCategoryButtons() {
   categoryButtons.forEach(button => {
     const category = button.dataset.category || "all";
 
     button.classList.toggle(
       "active",
-      category.toLowerCase() === selectedCategory.toLowerCase()
+      normalize(category) === normalize(selectedCategory)
     );
   });
 }
+
+// =====================================
+// RENDER RESOURCES
+// =====================================
 
 function renderResources(resources) {
   if (!resourceGrid) return;
@@ -97,6 +134,7 @@ function renderResources(resources) {
 
   resources.forEach(resource => {
     const card = document.createElement("article");
+
     card.className = "resource-card";
 
     const icon = categoryIcons[resource.category] || "📦";
@@ -107,21 +145,39 @@ function renderResources(resources) {
       </div>
 
       <div class="resource-content">
+
         <span class="resource-category">
-          ${escapeHTML(resource.category || "Other")}
+          ${escapeHTML(resource.category || "Others")}
         </span>
 
-        <h3>${escapeHTML(resource.name || "Untitled item")}</h3>
+        <h3>
+          ${escapeHTML(resource.name || "Untitled item")}
+        </h3>
 
-        <p>${escapeHTML(resource.description || "No description available.")}</p>
+        <p>
+          ${escapeHTML(
+            resource.description || "No description available."
+          )}
+        </p>
 
         <div class="resource-details">
-          <span>📍 ${escapeHTML(resource.location || "Location not specified")}</span>
-          <span>💰 ${formatFee(resource.fee)}</span>
+
+          <span>
+            📍 ${escapeHTML(
+              resource.location || "Location not specified"
+            )}
+          </span>
+
+          <span>
+            💰 ${formatFee(resource.fee)}
+          </span>
+
         </div>
 
         <p class="resource-owner">
-          Owner: ${escapeHTML(resource.ownerName || "CampusLend member")}
+          Owner: ${escapeHTML(
+            resource.ownerName || "CampusLend member"
+          )}
         </p>
 
         <a
@@ -130,6 +186,7 @@ function renderResources(resources) {
         >
           View Details
         </a>
+
       </div>
     `;
 
@@ -137,41 +194,72 @@ function renderResources(resources) {
   });
 }
 
+// =====================================
+// SEARCH + FILTER
+// =====================================
+
 function applyFilters() {
-  const term = (searchInput?.value ?? searchTerm)
-    .trim()
-    .toLowerCase();
+
+  const term = normalize(
+    searchInput?.value ?? searchTerm
+  );
 
   searchTerm = term;
 
   const filtered = allResources.filter(resource => {
-    const matchesCategory =
-      selectedCategory.toLowerCase() === "all" ||
-      (resource.category || "").toLowerCase() ===
-        selectedCategory.toLowerCase();
 
-    const searchableText = [
+    // CATEGORY FILTER
+
+    const matchesCategory =
+      normalize(selectedCategory) === "all" ||
+      normalize(resource.category) === normalize(selectedCategory);
+
+    // SEARCH ALL RELEVANT FIELDS
+
+    const searchableFields = [
       resource.name,
       resource.description,
       resource.category,
       resource.location,
       resource.ownerName
-    ].join(" ").toLowerCase();
+    ];
 
-    return matchesCategory && searchableText.includes(term);
+    const searchableText = normalize(
+      searchableFields
+        .filter(value => value !== null && value !== undefined)
+        .join(" ")
+    );
+
+    // Support multiple search words
+    const searchWords = term.split(" ").filter(Boolean);
+
+    const matchesSearch = searchWords.every(word =>
+      searchableText.includes(word)
+    );
+
+    return matchesCategory && matchesSearch;
   });
 
   renderResources(filtered);
+
   updateCategoryButtons();
+
   hideBrowseMessage();
 }
 
+// =====================================
+// LOAD RESOURCES FROM FIRESTORE
+// =====================================
+
 async function loadResources() {
+
   if (!resourceGrid) return;
 
-  resourceGrid.innerHTML = "<p>Loading available items...</p>";
+  resourceGrid.innerHTML =
+    "<p>Loading available items...</p>";
 
   try {
+
     const itemsQuery = query(
       collection(db, "items"),
       where("available", "==", true)
@@ -180,15 +268,31 @@ async function loadResources() {
     const snapshot = await getDocs(itemsQuery);
 
     allResources = snapshot.docs
+
       .map(itemDoc => ({
         id: itemDoc.id,
         ...itemDoc.data()
       }))
+
+      // Hide items with active borrowing requests
       .filter(resource => !resource.activeRequestId)
+
+      // Only show the 7 allowed categories
+      .filter(resource =>
+        categories.some(
+          category =>
+            normalize(category) === normalize(resource.category)
+        )
+      )
+
+      // Latest items first
       .sort((a, b) => {
+
         const dateA = a.createdAt?.toMillis?.() || 0;
         const dateB = b.createdAt?.toMillis?.() || 0;
+
         return dateB - dateA;
+
       });
 
     if (searchInput) {
@@ -198,6 +302,7 @@ async function loadResources() {
     applyFilters();
 
   } catch (error) {
+
     console.error("Unable to load resources:", error);
 
     resourceGrid.innerHTML = "";
@@ -206,15 +311,23 @@ async function loadResources() {
       resultCount.textContent = "Unable to load resources";
     }
 
-    if (noResults) noResults.hidden = true;
+    if (noResults) {
+      noResults.hidden = true;
+    }
 
     showBrowseMessage(
       "Unable to load items. Please refresh the page and try again."
     );
+
   }
 }
 
+// =====================================
+// RESET SEARCH AND FILTER
+// =====================================
+
 function resetFilters() {
+
   selectedCategory = "all";
   searchTerm = "";
 
@@ -223,6 +336,7 @@ function resetFilters() {
   }
 
   const newUrl = new URL(window.location.href);
+
   newUrl.search = "";
 
   window.history.replaceState({}, "", newUrl);
@@ -230,31 +344,73 @@ function resetFilters() {
   applyFilters();
 }
 
+// =====================================
+// CATEGORY CLICK
+// =====================================
+
 categoryButtons.forEach(button => {
+
   button.addEventListener("click", () => {
-    selectedCategory = button.dataset.category || "all";
+
+    selectedCategory =
+      button.dataset.category || "all";
+
     applyFilters();
+
   });
+
 });
+
+// =====================================
+// SEARCH BUTTON
+// =====================================
 
 searchButton?.addEventListener("click", () => {
-  searchTerm = searchInput?.value.trim() || "";
+
+  searchTerm = searchInput?.value || "";
+
   applyFilters();
+
 });
+
+// =====================================
+// LIVE SEARCH
+// =====================================
 
 searchInput?.addEventListener("input", () => {
-  searchTerm = searchInput.value.trim();
+
+  searchTerm = searchInput.value;
+
   applyFilters();
+
 });
+
+// =====================================
+// ENTER KEY SEARCH
+// =====================================
 
 searchInput?.addEventListener("keydown", event => {
+
   if (event.key === "Enter") {
+
     event.preventDefault();
-    searchTerm = searchInput.value.trim();
+
+    searchTerm = searchInput.value;
+
     applyFilters();
+
   }
+
 });
 
+// =====================================
+// RESET BUTTON
+// =====================================
+
 resetSearch?.addEventListener("click", resetFilters);
+
+// =====================================
+// INITIALIZE
+// =====================================
 
 loadResources();
