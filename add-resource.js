@@ -2,8 +2,7 @@
 import { auth, db } from "./firebase-config.js";
 
 import {
-    onAuthStateChanged,
-    signOut
+    onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-auth.js";
 
 import {
@@ -14,30 +13,23 @@ import {
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.5.0/firebase-firestore.js";
 
-// ------------------------------------
-// HTML ELEMENTS
-// ------------------------------------
-
-const resourceForm = document.getElementById("resourceForm");
-const submitButton = document.getElementById("submitButton");
-const formMessage = document.getElementById("formMessage");
-
-let currentUser = null;
-let userProfile = {};
-let authReady = false;
-let isSubmitting = false;
-
-// ------------------------------------
-// CONSTANTS
-// ------------------------------------
+// ========================================
+// ALLOWED VALUES
+// ========================================
 
 const ALLOWED_CATEGORIES = [
     "Books",
+    "Textbooks",
+    "Calculators",
     "Electronics",
+    "Laptops",
     "Photography",
+    "Cameras",
     "Sports",
+    "Sports Equipment",
     "Tools",
     "Stationery",
+    "Accessories",
     "Other"
 ];
 
@@ -55,329 +47,437 @@ const ALLOWED_AVAILABILITY = [
     "Unavailable"
 ];
 
-// ------------------------------------
-// MESSAGE
-// ------------------------------------
+// ========================================
+// SHARED RESOURCE FORM FUNCTION
+// ========================================
 
-function showMessage(message, type = "error") {
-    if (!formMessage) return;
+export function initResourceForm(config) {
 
-    formMessage.textContent = message;
-    formMessage.className = `form-message ${type}`;
-}
+    const form = document.getElementById(config.formId);
+    const button = document.getElementById(config.buttonId);
+    const message = document.getElementById(config.messageId);
 
-// ------------------------------------
-// FORM CONTROL
-// ------------------------------------
-
-function setFormEnabled(enabled) {
-    if (!resourceForm) return;
-
-    [...resourceForm.elements].forEach(element => {
-        element.disabled = !enabled;
-    });
-}
-
-function setSubmitting(submitting) {
-    if (!submitButton) return;
-
-    submitButton.disabled = submitting;
-
-    submitButton.textContent = submitting
-        ? "Publishing..."
-        : "Submit Resource →";
-}
-
-// ------------------------------------
-// LOAD USER PROFILE
-// ------------------------------------
-
-async function loadUserProfile(user) {
-    try {
-        const profileRef = doc(db, "users", user.uid);
-        const profileSnapshot = await getDoc(profileRef);
-
-        userProfile = profileSnapshot.exists()
-            ? profileSnapshot.data()
-            : {};
-
-    } catch (error) {
-        console.error("Profile loading failed:", error);
-
-        // Resource can still be published using account details.
-        userProfile = {};
-    }
-}
-
-// ------------------------------------
-// AUTHENTICATION CHECK
-// ------------------------------------
-
-onAuthStateChanged(auth, async user => {
-
-    authReady = false;
-    currentUser = user;
-
-    setFormEnabled(false);
-
-    if (!user) {
-        window.location.replace("login.html");
+    if (!form || !button || !message) {
+        console.error("Resource form elements not found.");
         return;
     }
 
-    try {
-        await user.reload();
+    let currentUser = null;
+    let userProfile = {};
+    let authReady = false;
+    let isSubmitting = false;
 
-        currentUser = auth.currentUser;
+    // ====================================
+    // FIELD SELECTORS
+    // ====================================
 
-        if (!currentUser || !currentUser.emailVerified) {
-            showMessage(
-                "Please verify your email before adding a resource."
+    const fields = config.fields;
+
+    const getField = key =>
+        document.getElementById(fields[key]);
+
+    // ====================================
+    // MESSAGE
+    // ====================================
+
+    function showMessage(text, type = "error") {
+        message.textContent = text;
+        message.className = `form-message ${type}`;
+    }
+
+    // ====================================
+    // FORM ENABLE / DISABLE
+    // ====================================
+
+    function setFormEnabled(enabled) {
+
+        [...form.elements].forEach(element => {
+            element.disabled = !enabled;
+        });
+    }
+
+    function setSubmitting(submitting) {
+
+        button.disabled = submitting;
+
+        button.textContent = submitting
+            ? "Publishing..."
+            : config.buttonText;
+    }
+
+    // ====================================
+    // LOAD USER PROFILE
+    // ====================================
+
+    async function loadUserProfile(user) {
+
+        try {
+
+            const profileRef = doc(
+                db,
+                "users",
+                user.uid
             );
 
-            await signOut(auth);
-            window.location.replace("login.html");
+            const snapshot = await getDoc(profileRef);
+
+            userProfile = snapshot.exists()
+                ? snapshot.data()
+                : {};
+
+        } catch (error) {
+
+            console.error(
+                "Profile loading error:",
+                error
+            );
+
+            userProfile = {};
+        }
+    }
+
+    // ====================================
+    // AUTHENTICATION
+    // ====================================
+
+    onAuthStateChanged(auth, async user => {
+
+        authReady = false;
+        currentUser = user;
+
+        setFormEnabled(false);
+
+        if (!user) {
+
+            showMessage(
+                "Please log in to publish a resource."
+            );
+
+            if (config.redirectToLogin) {
+                window.location.replace("login.html");
+            }
+
             return;
         }
 
-        await loadUserProfile(currentUser);
+        try {
 
-        authReady = true;
-        setFormEnabled(true);
+            await user.reload();
 
-        showMessage(
-            "Your account is verified. You can now add a resource.",
-            "success"
-        );
+            currentUser = auth.currentUser;
 
-    } catch (error) {
-        console.error("Authentication error:", error);
+            if (
+                !currentUser ||
+                !currentUser.emailVerified
+            ) {
 
-        showMessage(
-            "Unable to verify your account. Please sign in again."
-        );
+                showMessage(
+                    "Please verify your email before publishing."
+                );
 
-        setFormEnabled(false);
-    }
-});
+                if (config.redirectToLogin) {
+                    window.location.replace("login.html");
+                }
 
-// ------------------------------------
-// FORM SUBMISSION
-// ------------------------------------
+                return;
+            }
 
-resourceForm?.addEventListener("submit", async event => {
+            await loadUserProfile(currentUser);
 
-    event.preventDefault();
+            authReady = true;
 
-    if (isSubmitting) return;
+            setFormEnabled(true);
 
-    if (!authReady || !currentUser) {
-        showMessage(
-            "Please sign in with a verified account first."
-        );
-        return;
-    }
-
-    // --------------------------------
-    // GET FORM VALUES
-    // --------------------------------
-
-    const name = document
-        .getElementById("resourceName")
-        .value.trim();
-
-    const category = document
-        .getElementById("category")
-        .value;
-
-    const condition = document
-        .getElementById("condition")
-        .value;
-
-    const description = document
-        .getElementById("description")
-        .value.trim();
-
-    const availability = document
-        .getElementById("availability")
-        .value;
-
-    const fee = Number(
-        document.getElementById("fee").value
-    );
-
-    const maxDuration = Number(
-        document.getElementById("maxDays").value
-    );
-
-    const location = document
-        .getElementById("location")
-        .value.trim();
-
-    const ownershipConfirmed = document
-        .getElementById("confirmOwnership")
-        .checked;
-
-    // --------------------------------
-    // VALIDATION
-    // --------------------------------
-
-    if (
-        !name ||
-        !category ||
-        !condition ||
-        !description ||
-        !location
-    ) {
-        showMessage("Please complete all required fields.");
-        return;
-    }
-
-    if (name.length > 100) {
-        showMessage("Resource name must not exceed 100 characters.");
-        return;
-    }
-
-    if (description.length > 1000) {
-        showMessage("Description must not exceed 1000 characters.");
-        return;
-    }
-
-    if (location.length > 150) {
-        showMessage("Pickup location must not exceed 150 characters.");
-        return;
-    }
-
-    if (!ALLOWED_CATEGORIES.includes(category)) {
-        showMessage("Please select a valid category.");
-        return;
-    }
-
-    if (!ALLOWED_CONDITIONS.includes(condition)) {
-        showMessage("Please select a valid item condition.");
-        return;
-    }
-
-    if (!ALLOWED_AVAILABILITY.includes(availability)) {
-        showMessage("Please select a valid availability status.");
-        return;
-    }
-
-    if (
-        !Number.isFinite(fee) ||
-        fee < 0 ||
-        fee > 1000000
-    ) {
-        showMessage("Please enter a valid borrowing fee.");
-        return;
-    }
-
-    if (!ALLOWED_DURATIONS.includes(maxDuration)) {
-        showMessage("Please select a valid borrowing period.");
-        return;
-    }
-
-    if (!ownershipConfirmed) {
-        showMessage(
-            "Please confirm that you have permission to list this resource."
-        );
-        return;
-    }
-
-    if (!resourceForm.reportValidity()) {
-        return;
-    }
-
-    // --------------------------------
-    // PUBLISH RESOURCE
-    // --------------------------------
-
-    isSubmitting = true;
-    setSubmitting(true);
-
-    try {
-
-        // Refresh authentication status.
-        await currentUser.reload();
-
-        currentUser = auth.currentUser;
-
-        if (!currentUser || !currentUser.emailVerified) {
-            throw new Error(
-                "Please verify your email before publishing."
+            showMessage(
+                "Your account is verified. You can publish a resource.",
+                "success"
             );
+
+        } catch (error) {
+
+            console.error(
+                "Authentication error:",
+                error
+            );
+
+            showMessage(
+                "Unable to verify your account. Please try again."
+            );
+
+            setFormEnabled(false);
+        }
+    });
+
+    // ====================================
+    // FORM SUBMISSION
+    // ====================================
+
+    form.addEventListener("submit", async event => {
+
+        event.preventDefault();
+
+        if (isSubmitting) return;
+
+        if (!authReady || !currentUser) {
+
+            showMessage(
+                "Please sign in with a verified account."
+            );
+
+            return;
         }
 
-        const available = availability === "Available";
+        // --------------------------------
+        // GET VALUES
+        // --------------------------------
 
-        const ownerName =
-            userProfile?.displayName ||
-            currentUser.displayName ||
-            currentUser.email ||
-            "CampusLend member";
+        const name = getField("name").value.trim();
 
-        // Save resource to Firestore.
-        await addDoc(collection(db, "items"), {
+        const category = getField("category").value;
 
-            name: name,
-            category: category,
-            condition: condition,
-            description: description,
-            location: location,
+        const condition = getField("condition").value;
 
-            fee: fee,
-            maxDuration: maxDuration,
+        const description = getField("description").value.trim();
 
-            ownerId: currentUser.uid,
-            ownerName: ownerName,
+        const availability = getField("availability").value;
 
-            available: available,
-            activeRequestId: null,
+        const fee = Number(getField("fee").value);
 
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-
-        });
-
-        showMessage(
-            "Resource published successfully!",
-            "success"
+        const maxDuration = Number(
+            getField("maxDuration").value
         );
 
-        resourceForm.reset();
+        const location = getField("location").value.trim();
 
-        // Redirect after successful publishing.
-        window.setTimeout(() => {
-            window.location.href = "dashboard.html";
-        }, 1500);
+        const ownershipConfirmed =
+            getField("ownership").checked;
 
-    } catch (error) {
+        // --------------------------------
+        // VALIDATION
+        // --------------------------------
 
-        console.error(
-            "Resource publishing failed:",
-            error
-        );
+        if (
+            !name ||
+            !category ||
+            !condition ||
+            !description ||
+            !location
+        ) {
 
-        let errorMessage =
-            "Unable to publish your resource. Please try again.";
+            showMessage(
+                "Please complete all required fields."
+            );
 
-        if (error.code === "permission-denied") {
-            errorMessage =
-                "Permission denied. Please check your account and Firestore Security Rules.";
-        } else if (error.code === "unavailable") {
-            errorMessage =
-                "Network unavailable. Please check your internet connection.";
-        } else if (error.message) {
-            errorMessage = error.message;
+            return;
         }
 
-        showMessage(errorMessage);
+        if (name.length > 100) {
 
-    } finally {
+            showMessage(
+                "Resource name must not exceed 100 characters."
+            );
 
-        isSubmitting = false;
-        setSubmitting(false);
+            return;
+        }
 
-    }
+        if (description.length > 1000) {
 
-});
+            showMessage(
+                "Description must not exceed 1000 characters."
+            );
+
+            return;
+        }
+
+        if (location.length > 150) {
+
+            showMessage(
+                "Pickup location must not exceed 150 characters."
+            );
+
+            return;
+        }
+
+        if (!ALLOWED_CATEGORIES.includes(category)) {
+
+            showMessage("Please select a valid category.");
+
+            return;
+        }
+
+        if (!ALLOWED_CONDITIONS.includes(condition)) {
+
+            showMessage("Please select a valid condition.");
+
+            return;
+        }
+
+        if (!ALLOWED_AVAILABILITY.includes(availability)) {
+
+            showMessage("Please select a valid availability status.");
+
+            return;
+        }
+
+        if (
+            !Number.isFinite(fee) ||
+            fee < 0 ||
+            fee > 1000000
+        ) {
+
+            showMessage("Please enter a valid borrowing fee.");
+
+            return;
+        }
+
+        if (!ALLOWED_DURATIONS.includes(maxDuration)) {
+
+            showMessage("Please select a valid borrowing period.");
+
+            return;
+        }
+
+        if (!ownershipConfirmed) {
+
+            showMessage(
+                "Please confirm that you have permission to list this resource."
+            );
+
+            return;
+        }
+
+        if (!form.reportValidity()) return;
+
+        // --------------------------------
+        // START SUBMISSION
+        // --------------------------------
+
+        isSubmitting = true;
+
+        setSubmitting(true);
+
+        try {
+
+            // Refresh login status.
+
+            await currentUser.reload();
+
+            currentUser = auth.currentUser;
+
+            if (
+                !currentUser ||
+                !currentUser.emailVerified
+            ) {
+
+                throw new Error(
+                    "Please verify your email before publishing."
+                );
+            }
+
+            // Determine availability.
+
+            const available =
+                availability === "Available";
+
+            // Determine owner name.
+
+            const ownerName =
+                userProfile?.displayName ||
+                userProfile?.name ||
+                currentUser.displayName ||
+                currentUser.email ||
+                "CampusLend member";
+
+            // --------------------------------
+            // FIRESTORE DATA
+            // --------------------------------
+
+            const resourceData = {
+
+                name: name,
+
+                category: category,
+
+                condition: condition,
+
+                description: description,
+
+                location: location,
+
+                fee: fee,
+
+                maxDuration: maxDuration,
+
+                ownerId: currentUser.uid,
+
+                ownerName: ownerName,
+
+                available: available,
+
+                activeRequestId: null,
+
+                isArchived: false,
+
+                createdAt: serverTimestamp(),
+
+                updatedAt: serverTimestamp()
+
+            };
+
+            // Save resource.
+
+            await addDoc(
+                collection(db, "items"),
+                resourceData
+            );
+
+            // Reset form.
+
+            form.reset();
+
+            showMessage(
+                "Resource published successfully!",
+                "success"
+            );
+
+            // Execute page-specific action.
+
+            if (typeof config.onSuccess === "function") {
+                await config.onSuccess();
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Resource publishing failed:",
+                error
+            );
+
+            let errorMessage =
+                "Unable to publish your resource. Please try again.";
+
+            if (error.code === "permission-denied") {
+
+                errorMessage =
+                    "Permission denied. Please check your Firestore Security Rules.";
+
+            } else if (error.code === "unavailable") {
+
+                errorMessage =
+                    "Network unavailable. Please check your internet connection.";
+
+            } else if (error.message) {
+
+                errorMessage = error.message;
+            }
+
+            showMessage(errorMessage);
+
+        } finally {
+
+            isSubmitting = false;
+
+            setSubmitting(false);
+        }
+    });
+}
