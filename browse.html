@@ -1,10 +1,16 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Browse and borrow useful resources from your university community.">
+
+    <meta name="description"
+        content="Browse and borrow useful resources from your university community.">
+
+    <meta name="theme-color" content="#ffffff">
+
     <title>Browse Resources | CampusLend</title>
 
     <link rel="stylesheet" href="style.css">
@@ -13,27 +19,60 @@
 
 <body>
 
+    <!-- ================= NAVBAR ================= -->
+
     <header class="navbar">
+
         <div class="container">
+
             <a href="index.html" class="logo">
                 Campus<span>Lend</span>
             </a>
 
             <nav class="nav-links">
+
                 <a href="index.html">Home</a>
-                <a href="browse.html" class="active">Browse Items</a>
-                <a href="add-resource.html">Add Resource</a>
-                <a href="dashboard.html">Dashboard</a>
-                <a href="login.html">Login</a>
-                <a href="register.html" class="primary-btn">Join Now</a>
+
+                <a href="browse.html" class="active">
+                    Browse Items
+                </a>
+
+                <a href="add-resource.html">
+                    Add Resource
+                </a>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="login.html">
+                    Login
+                </a>
+
+                <a href="register.html" class="primary-btn">
+                    Join Now
+                </a>
+
             </nav>
+
         </div>
+
     </header>
 
+
+    <!-- ================= MAIN ================= -->
+
     <main>
+
+        <!-- HERO SECTION -->
+
         <section class="browse-hero">
+
             <div class="container">
-                <p class="eyebrow">CAMPUS COMMUNITY SHARING</p>
+
+                <p class="eyebrow">
+                    CAMPUS COMMUNITY SHARING
+                </p>
 
                 <h1>
                     Find What You Need.<br>
@@ -45,88 +84,235 @@
                     in your university community.
                 </p>
 
+
+                <!-- SEARCH BOX -->
+
                 <div class="search-box">
+
                     <input
                         type="search"
                         id="searchInput"
-                        placeholder="Search books, laptops, calculators..."
+                        placeholder="Search textbooks, laptops, cameras..."
                         aria-label="Search resources"
+                        autocomplete="off"
                     >
 
-                    <button type="button" id="searchButton" class="primary-btn">
+                    <button
+                        type="button"
+                        id="searchButton"
+                        class="primary-btn"
+                    >
                         Search
                     </button>
+
                 </div>
+
             </div>
+
         </section>
 
+
+        <!-- ================= BROWSE SECTION ================= -->
+
         <section class="browse-section">
+
             <div class="container">
 
+
+                <!-- SECTION HEADING -->
+
                 <div class="browse-heading">
+
                     <div>
-                        <p class="eyebrow">EXPLORE RESOURCES</p>
-                        <h2>Available Items</h2>
-                        <p>Find resources shared by your campus community.</p>
+
+                        <p class="eyebrow">
+                            EXPLORE RESOURCES
+                        </p>
+
+                        <h2>
+                            Available Items
+                        </h2>
+
+                        <p>
+                            Find resources shared by your campus community.
+                        </p>
+
                     </div>
 
                     <a href="add-resource.html" class="primary-btn">
                         + Share an Item
                     </a>
+
                 </div>
+
+
+                <!-- ================= CATEGORY FILTERS ================= -->
 
                 <div class="category-filters" id="categoryFilters">
-                    <button type="button" class="category-btn active" data-category="all">All Items</button>
-                    <button type="button" class="category-btn" data-category="Books">Books</button>
-                    <button type="button" class="category-btn" data-category="Electronics">Electronics</button>
-                    <button type="button" class="category-btn" data-category="Photography">Photography</button>
-                    <button type="button" class="category-btn" data-category="Sports">Sports</button>
-                    <button type="button" class="category-btn" data-category="Tools">Tools</button>
-                    <button type="button" class="category-btn" data-category="Stationery">Stationery</button>
-                    <button type="button" class="category-btn" data-category="Other">Other</button>
+
+                    <button
+                        type="button"
+                        class="category-btn active"
+                        data-category="all"
+                    >
+                        All Items
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Textbooks"
+                    >
+                        📚 Textbooks
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Calculators"
+                    >
+                        🧮 Calculators
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Laptops"
+                    >
+                        💻 Laptops
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Cameras"
+                    >
+                        📷 Cameras
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Sports Equipments"
+                    >
+                        ⚽ Sports Equipments
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Accessories"
+                    >
+                        🎧 Accessories
+                    </button>
+
+                    <button
+                        type="button"
+                        class="category-btn"
+                        data-category="Others"
+                    >
+                        📦 Others
+                    </button>
+
                 </div>
+
+
+                <!-- ================= RESULTS COUNT ================= -->
 
                 <div class="results-info">
-                    <p id="resultCount">Loading resources...</p>
+
+                    <p id="resultCount">
+                        Loading resources...
+                    </p>
+
                 </div>
 
-                <div id="resourceGrid" class="resources-grid">
+
+                <!-- ================= RESOURCE GRID ================= -->
+
+                <div
+                    id="resourceGrid"
+                    class="resources-grid"
+                >
+
                     <div class="loading-message">
                         Loading available resources...
                     </div>
+
                 </div>
 
-                <div id="noResults" class="no-results" hidden>
-                    <h3>No resources found</h3>
-                    <p>Try another search or select a different category.</p>
 
-                    <button type="button" id="resetSearch" class="primary-btn">
+                <!-- ================= NO RESULTS ================= -->
+
+                <div
+                    id="noResults"
+                    class="no-results"
+                    hidden
+                >
+
+                    <h3>
+                        No resources found
+                    </h3>
+
+                    <p>
+                        Try another search or select a different category.
+                    </p>
+
+                    <button
+                        type="button"
+                        id="resetSearch"
+                        class="primary-btn"
+                    >
                         Clear Filters
                     </button>
+
                 </div>
 
-                <div id="browseMessage" class="browse-message"
-                    role="status" aria-live="polite"></div>
+
+                <!-- ================= ERROR MESSAGE ================= -->
+
+                <div
+                    id="browseMessage"
+                    class="browse-message"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+
 
             </div>
+
         </section>
+
     </main>
 
+
+    <!-- ================= FOOTER ================= -->
+
     <footer class="footer">
+
         <div class="container">
+
             <a href="index.html" class="logo">
                 Campus<span>Lend</span>
             </a>
 
-            <p>Sharing resources. Building a stronger campus community.</p>
+            <p>
+                Sharing resources. Building a stronger campus community.
+            </p>
 
             <p class="copyright">
                 &copy; 2026 CampusLend. All rights reserved.
             </p>
+
         </div>
+
     </footer>
+
+
+    <!-- ================= JAVASCRIPT ================= -->
 
     <script type="module" src="browse.js"></script>
 
 </body>
+
 </html>
